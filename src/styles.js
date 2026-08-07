@@ -45,6 +45,12 @@ export const CSS = `
   padding: 18px 16px; overflow-y: auto;
   position: sticky; top: 0; height: 100vh; max-height: 100vh; align-self: flex-start;
 }
+.wb-sidebar-right {
+  width: 280px; flex-shrink: 0; border-left: 1px solid var(--border);
+  background: var(--surface); display: flex; flex-direction: column;
+  padding: 18px 16px; overflow-y: auto;
+  position: sticky; top: 0; height: 100vh; max-height: 100vh; align-self: flex-start;
+}
 .sidebar-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
 .sidebar-head h4 { margin: 0; font-size: 11px; color: var(--text-dim); font-weight: 700; text-transform: uppercase; letter-spacing: .08em; }
 .empty-mini { font-size: 11.5px; color: var(--text-faint); padding: 8px 0; line-height: 1.65; }

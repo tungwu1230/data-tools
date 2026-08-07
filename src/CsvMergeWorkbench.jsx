@@ -13,12 +13,14 @@ import StepFiles from "./components/StepFiles.jsx";
 import StepMergeConfig from "./components/StepMergeConfig.jsx";
 import StepOutput from "./components/StepOutput.jsx";
 import StepPreview from "./components/StepPreview.jsx";
+import ColumnSelectionSidebar from "./components/ColumnSelectionSidebar.jsx";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 
 export default function CsvMergeWorkbench() {
   const [step, setStep] = useState(1);
   const [collapsed, setCollapsed] = useState({});
   const [previewOpen, setPreviewOpen] = useState({});
+  const [activeFileId, setActiveFileId] = useState(null);
 
   const { files, loadingFiles, fileInputRef, handleUpload, removeFile, baseFileId, setBaseFileId, baseFile, others } = useCsvFiles();
   const { joinConfig, setJoinConfig } = useJoinConfig(files);
@@ -96,6 +98,7 @@ export default function CsvMergeWorkbench() {
               selectAllVisible={columnSelection.selectAllVisible} clearVisible={columnSelection.clearVisible}
               collections={collections} openCreateFromFile={sidebar.openCreateFromFile}
               baseFileId={baseFileId} setBaseFileId={setBaseFileId} others={others} joinConfig={joinConfig} setJoinConfig={setJoinConfig}
+              activeFileId={activeFileId} setActiveFileId={setActiveFileId}
             />
           )}
           {step === 2 && (
@@ -145,6 +148,24 @@ export default function CsvMergeWorkbench() {
           )}
         </div>
       </div>
+
+      {step === 1 && files.length > 0 && (
+        <ColumnSelectionSidebar
+          files={files}
+          activeFileId={activeFileId}
+          setActiveFileId={setActiveFileId}
+          selections={columnSelection.selections}
+          toggleColumn={columnSelection.toggleColumn}
+          visibleHeaders={columnSelection.visibleHeaders}
+          filterMode={columnSelection.filterMode}
+          updateFilter={columnSelection.updateFilter}
+          clearFilter={columnSelection.clearFilter}
+          selectAllVisible={columnSelection.selectAllVisible}
+          clearVisible={columnSelection.clearVisible}
+          collections={collections}
+          openCreateFromFile={sidebar.openCreateFromFile}
+        />
+      )}
     </div>
   );
 }
