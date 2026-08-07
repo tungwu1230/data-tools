@@ -1,5 +1,76 @@
 import { useState } from "react";
-import { ChevronUp, ChevronDown, RotateCcw, Filter, Bookmark, Search, X } from "lucide-react";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+  useSortable,
+  sortableKeyboardCoordinates,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import { GripVertical, RotateCcw, Filter, Bookmark, Search, X } from "lucide-react";
+
+function SortableRow({ oc, isSelected, onToggleSelect, onRename, onResetName }) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: oc.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.6 : 1,
+    background: isDragging ? "var(--surface-alt)" : undefined,
+    zIndex: isDragging ? 2 : 1,
+    position: "relative",
+    boxShadow: isDragging ? "0 4px 12px rgba(0,0,0,0.15)" : undefined,
+  };
+
+  return (
+    <tr ref={setNodeRef} style={style} className={isDragging ? "is-dragging" : ""}>
+      <td style={{ textAlign: "center" }}>
+        <input type="checkbox" checked={isSelected} onChange={() => onToggleSelect(oc.id)} />
+      </td>
+      <td style={{ textAlign: "center" }}>
+        <button
+          className="drag-handle-btn"
+          title="按住拖拉以調整欄位順序"
+          {...attributes}
+          {...listeners}
+          type="button"
+        >
+          <GripVertical size={14} />
+        </button>
+      </td>
+      <td className="out-src-file">{oc.fileName}</td>
+      <td className="out-src-col">{oc.column}</td>
+      <td>
+        <input className="out-name-input" value={oc.outputName} onChange={(e) => onRename(oc.id, e.target.value)} />
+      </td>
+      <td style={{ textAlign: "center" }}>
+        <button
+          className="btn ghost xs"
+          title="還原成原始欄位名稱"
+          style={{ display: "inline-flex", alignItems: "center", gap: 3 }}
+          onClick={() => onResetName(oc.id)}
+        >
+          <RotateCcw size={11} />
+          <span>還原</span>
+        </button>
+      </td>
+    </tr>
+  );
+}
 
 export default function StepOutput(props) {
   const {
@@ -7,12 +78,23 @@ export default function StepOutput(props) {
     outputCols, selectedOutIds, toggleOutSelect, selectAllOut, clearOutSel,
     selectOutIds, deselectOutIds,
     prefixVal, setPrefixVal, suffixVal, setSuffixVal, applyPrefixSuffix,
-    moveOutputCol, renameOutputCol, resetOutputName, resetSelectedOutputNames,
+    reorderOutputCols, renameOutputCol, resetOutputName, resetSelectedOutputNames,
   } = props;
 
   const [fileFilter, setFileFilter] = useState("all");
   const [collectionFilter, setCollectionFilter] = useState("all");
   const [searchText, setSearchText] = useState("");
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 5,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   const displayCols = outputCols.filter((oc) => {
     if (fileFilter !== "all" && oc.fileId !== fileFilter) return false;
@@ -47,6 +129,13 @@ export default function StepOutput(props) {
     setFileFilter("all");
     setCollectionFilter("all");
     setSearchText("");
+  };
+
+  const handleDragEnd = (event) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      reorderOutputCols(active.id, over.id);
+    }
   };
 
   return (
@@ -130,63 +219,41 @@ export default function StepOutput(props) {
         </div>
       </div>
 
-      <table className="out-table">
-        <thead>
-          <tr>
-            <th style={{ width: 32, textAlign: "center" }}>
-              <input
-                type="checkbox"
-                checked={allDisplayedSelected}
-                onChange={handleHeaderCheckboxChange}
-                disabled={displayCols.length === 0}
-              />
-            </th>
-            <th style={{ width: 60, textAlign: "center" }}>順序</th>
-            <th style={{ width: "24%" }}>來源檔案</th>
-            <th style={{ width: "24%" }}>原始欄位</th>
-            <th>輸出欄位名稱</th>
-            <th style={{ width: 70, textAlign: "center" }}>操作</th>
-          </tr>
-        </thead>
-        <tbody>
-          {displayCols.map((oc) => {
-            const rawIndex = outputCols.findIndex((o) => o.id === oc.id);
-            return (
-              <tr key={oc.id}>
-                <td style={{ textAlign: "center" }}>
-                  <input type="checkbox" checked={selectedOutIds.has(oc.id)} onChange={() => toggleOutSelect(oc.id)} />
-                </td>
-                <td style={{ textAlign: "center" }}>
-                  <div className="move-btns" style={{ justifyContent: "center" }}>
-                    <button disabled={rawIndex <= 0} onClick={() => moveOutputCol(rawIndex, -1)}>
-                      <ChevronUp size={12} />
-                    </button>
-                    <button disabled={rawIndex >= outputCols.length - 1} onClick={() => moveOutputCol(rawIndex, 1)}>
-                      <ChevronDown size={12} />
-                    </button>
-                  </div>
-                </td>
-                <td className="out-src-file">{oc.fileName}</td>
-                <td className="out-src-col">{oc.column}</td>
-                <td>
-                  <input className="out-name-input" value={oc.outputName} onChange={(e) => renameOutputCol(oc.id, e.target.value)} />
-                </td>
-                <td style={{ textAlign: "center" }}>
-                  <button
-                    className="btn ghost xs"
-                    title="還原成原始欄位名稱"
-                    style={{ display: "inline-flex", alignItems: "center", gap: 3 }}
-                    onClick={() => resetOutputName(oc.id)}
-                  >
-                    <RotateCcw size={11} />
-                    <span>還原</span>
-                  </button>
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+        <table className="out-table">
+          <thead>
+            <tr>
+              <th style={{ width: 32, textAlign: "center" }}>
+                <input
+                  type="checkbox"
+                  checked={allDisplayedSelected}
+                  onChange={handleHeaderCheckboxChange}
+                  disabled={displayCols.length === 0}
+                />
+              </th>
+              <th style={{ width: 50, textAlign: "center" }}>順序</th>
+              <th style={{ width: "24%" }}>來源檔案</th>
+              <th style={{ width: "24%" }}>原始欄位</th>
+              <th>輸出欄位名稱</th>
+              <th style={{ width: 70, textAlign: "center" }}>操作</th>
+            </tr>
+          </thead>
+          <SortableContext items={displayCols.map((oc) => oc.id)} strategy={verticalListSortingStrategy}>
+            <tbody>
+              {displayCols.map((oc) => (
+                <SortableRow
+                  key={oc.id}
+                  oc={oc}
+                  isSelected={selectedOutIds.has(oc.id)}
+                  onToggleSelect={toggleOutSelect}
+                  onRename={renameOutputCol}
+                  onResetName={resetOutputName}
+                />
+              ))}
+            </tbody>
+          </SortableContext>
+        </table>
+      </DndContext>
       {outputCols.length === 0 && <div className="empty">還沒有選取任何欄位，回上一步挑選要輸出的欄位。</div>}
       {outputCols.length > 0 && displayCols.length === 0 && (
         <div className="empty">沒有符合當前篩選條件的欄位。<br /><button className="btn ghost xs" onClick={resetFilters} style={{ marginTop: 8 }}>清除篩選條件</button></div>

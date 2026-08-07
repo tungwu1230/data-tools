@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { arrayMove } from "@dnd-kit/sortable";
 
 // derives the ordered output column list from selections, syncs on change while
 // preserving any renames/reordering already made
@@ -39,6 +40,16 @@ export function useOutputColumns(files, selections) {
       return next;
     });
   };
+
+  const reorderOutputCols = (activeId, overId) => {
+    setOutputCols((prev) => {
+      const oldIndex = prev.findIndex((oc) => oc.id === activeId);
+      const newIndex = prev.findIndex((oc) => oc.id === overId);
+      if (oldIndex === -1 || newIndex === -1 || oldIndex === newIndex) return prev;
+      return arrayMove(prev, oldIndex, newIndex);
+    });
+  };
+
   const renameOutputCol = (id, name) => setOutputCols((prev) => prev.map((oc) => (oc.id === id ? { ...oc, outputName: name } : oc)));
   const resetOutputName = (id) => setOutputCols((prev) => prev.map((oc) => (oc.id === id ? { ...oc, outputName: oc.column } : oc)));
   const resetSelectedOutputNames = () => {
@@ -72,6 +83,7 @@ export function useOutputColumns(files, selections) {
   return {
     outputCols, selectedOutIds, prefixVal, setPrefixVal, suffixVal, setSuffixVal,
     toggleOutSelect, selectAllOut, clearOutSel, selectOutIds, deselectOutIds, applyPrefixSuffix,
-    moveOutputCol, renameOutputCol, resetOutputName, resetSelectedOutputNames, removeOutputCol,
+    moveOutputCol, reorderOutputCols, renameOutputCol, resetOutputName, resetSelectedOutputNames, removeOutputCol,
   };
 }
+

@@ -405,10 +405,31 @@ select:focus, .merge-select:focus {
   color: var(--text); font-family: var(--mono); font-size: 12px; padding: 6px 9px;
 }
 .out-name-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-dim); }
-.move-btns { display: flex; gap: 3px; }
-.move-btns button { width: 21px; height: 21px; border-radius: 5px; border: 1px solid var(--border); background: var(--surface); color: var(--text-dim); cursor: pointer; font-size: 10px; display:flex; align-items:center; justify-content:center; }
-.move-btns button:hover:not(:disabled) { color: var(--text); border-color: var(--text-faint); }
-.move-btns button:disabled { opacity: .3; cursor: not-allowed; }
+.drag-handle-btn {
+  width: 24px;
+  height: 24px;
+  border-radius: 5px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-dim);
+  cursor: grab;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  touch-action: none;
+}
+.drag-handle-btn:hover {
+  color: var(--accent);
+  background: var(--surface-alt);
+  border-color: var(--border-soft);
+}
+.drag-handle-btn:active {
+  cursor: grabbing;
+}
+.out-table tr.is-dragging {
+  background: var(--surface-alt);
+  border-color: var(--accent);
+}
 
 .stat-strip { display: flex; gap: 14px; margin-bottom: 16px; }
 .stat { border: 1px solid var(--border); border-radius: 12px; padding: 12px 20px; background: var(--surface-alt); }
