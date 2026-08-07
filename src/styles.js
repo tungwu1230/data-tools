@@ -535,6 +535,61 @@ html, body {
   font-family: var(--mono);
 }
 
+/* Join Mode selection cards */
+.join-type-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+  margin-top: 8px;
+}
+.join-type-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.join-type-card:hover {
+  border-color: var(--text-faint);
+  background: var(--surface-alt);
+}
+.join-type-card.active {
+  border-color: var(--accent);
+  background: var(--accent-dim);
+  box-shadow: 0 0 0 1px var(--accent) inset;
+}
+.join-type-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+.join-type-title {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--text);
+}
+.join-type-card.active .join-type-title {
+  color: var(--accent-strong);
+}
+.join-type-badge {
+  font-size: 9.5px;
+  font-weight: 700;
+  background: var(--accent);
+  color: #fff;
+  padding: 1px 6px;
+  border-radius: 10px;
+}
+.join-type-desc {
+  font-size: 11px;
+  color: var(--text-dim);
+  margin: 0;
+  line-height: 1.45;
+}
+
+
 
 .merge-select, select {
   background: var(--surface);

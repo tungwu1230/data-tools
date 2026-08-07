@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 // per-file (non-base) join key configuration; drops stale entries when a file is removed
 export function useJoinConfig(files) {
   const [joinConfig, setJoinConfig] = useState({});
+  const [joinType, setJoinType] = useState("left");
 
   useEffect(() => {
     const validIds = new Set(files.map((f) => f.id));
@@ -17,5 +18,5 @@ export function useJoinConfig(files) {
     });
   }, [files]);
 
-  return { joinConfig, setJoinConfig };
+  return { joinConfig, setJoinConfig, joinType, setJoinType };
 }

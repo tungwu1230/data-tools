@@ -23,11 +23,11 @@ export default function CsvMergeWorkbench() {
   const [activeFileId, setActiveFileId] = useState(null);
 
   const { files, loadingFiles, fileInputRef, handleUpload, removeFile, baseFileId, setBaseFileId, baseFile, others } = useCsvFiles();
-  const { joinConfig, setJoinConfig } = useJoinConfig(files);
+  const { joinConfig, setJoinConfig, joinType, setJoinType } = useJoinConfig(files);
   const { collections, collectionsLoaded, createCollection, deleteCollection, updateCollection } = useCollections();
   const columnSelection = useColumnSelection(files, collections);
   const outputColumns = useOutputColumns(files, columnSelection.selections);
-  const { merged, exporting, exportCsv } = useMerge(step, baseFile, others, outputColumns.outputCols, joinConfig);
+  const { merged, exporting, exportCsv } = useMerge(step, baseFile, others, outputColumns.outputCols, joinConfig, joinType);
   const sidebar = useCollectionSidebar({ files, collections, createCollection, updateCollection });
 
   // keep the step-1 checkbox in sync when a column is dropped from the output list in step 3
@@ -103,6 +103,7 @@ export default function CsvMergeWorkbench() {
             <StepMergeConfig
               files={files} baseFileId={baseFileId} setBaseFileId={setBaseFileId}
               others={others} joinConfig={joinConfig} setJoinConfig={setJoinConfig}
+              joinType={joinType} setJoinType={setJoinType}
               selections={columnSelection.selections}
               outputCols={outputColumns.outputCols}
             />

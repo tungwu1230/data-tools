@@ -1,7 +1,7 @@
 import { GitMerge, ArrowRight, CheckCircle2, Columns, Key, AlertCircle, Layers } from "lucide-react";
 
 export default function StepMergeConfig(props) {
-  const { files, baseFileId, setBaseFileId, others, joinConfig, setJoinConfig, selections = {}, outputCols = [] } = props;
+  const { files, baseFileId, setBaseFileId, others, joinConfig, setJoinConfig, joinType = "left", setJoinType, selections = {}, outputCols = [] } = props;
 
   const getSelectedCols = (file) => {
     if (!file) return [];
@@ -59,14 +59,56 @@ export default function StepMergeConfig(props) {
     others.map((f) => joinConfig[f.id]?.baseKey).filter(Boolean)
   );
 
+  const getJoinTypeName = (type) => {
+    if (type === "inner") return "Inner Join (內部合併)";
+    if (type === "outer") return "Full Outer Join (全外部合併)";
+    return "Left Join (左外部合併)";
+  };
+
   return (
     <div className="merge-panel">
       <div className="merge-panel-head">
         <div className="merge-panel-title-row">
           <GitMerge className="merge-icon" size={18} />
-          <h4>合併設定 (Left Join)</h4>
+          <h4>合併設定 ({getJoinTypeName(joinType)})</h4>
         </div>
-        <p>選一份「主檔案」作為合併基準，其餘檔案透過指定的比對欄位（Key）將資料合併進來。</p>
+        <p>選一份「主檔案」作為合併基準，設定合併模式（Join Mode）與副檔案的 Key 欄位將資料整合。</p>
+      </div>
+
+      <div className="join-type-selector-section" style={{ marginBottom: 20 }}>
+        <div className="merge-section-subtitle">合併模式設定 (Join Mode)</div>
+        <div className="join-type-cards">
+          <div
+            className={`join-type-card ${joinType === "left" ? "active" : ""}`}
+            onClick={() => setJoinType && setJoinType("left")}
+          >
+            <div className="join-type-header">
+              <span className="join-type-title">Left Join (左外部合併)</span>
+              <span className="join-type-badge">預設</span>
+            </div>
+            <p className="join-type-desc">保留主檔案的所有資料列，並把對應相符的副檔案資料合併進來。</p>
+          </div>
+
+          <div
+            className={`join-type-card ${joinType === "inner" ? "active" : ""}`}
+            onClick={() => setJoinType && setJoinType("inner")}
+          >
+            <div className="join-type-header">
+              <span className="join-type-title">Inner Join (內部合併)</span>
+            </div>
+            <p className="join-type-desc">僅保留主檔案與副檔案在 Key 欄位上都有比對成功的資料列。</p>
+          </div>
+
+          <div
+            className={`join-type-card ${joinType === "outer" ? "active" : ""}`}
+            onClick={() => setJoinType && setJoinType("outer")}
+          >
+            <div className="join-type-header">
+              <span className="join-type-title">Full Outer Join (全外部合併)</span>
+            </div>
+            <p className="join-type-desc">保留主檔案與副檔案的所有資料列（未匹配到的資料將獨立成列輸出）。</p>
+          </div>
+        </div>
       </div>
 
       <div className="merge-section base-file-section">
