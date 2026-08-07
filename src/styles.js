@@ -1,11 +1,12 @@
-/* ---------------------------------------------------------------
-   design tokens — "drafting workbench" direction:
-   light paper canvas, white index-card panels, prussian-blue accent
-   for active/selected state, amber for the "base file" marker,
-   brick red for destructive actions. Fills the full viewport —
-   no outer card, no max-width — this *is* the page.
-----------------------------------------------------------------*/
 export const CSS = `
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+}
+
 .wb {
   --bg-canvas: #eef1f3;
   --bg-canvas-line: #e3e8eb;
@@ -34,8 +35,10 @@ export const CSS = `
   display: flex;
   flex-direction: row;
   align-items: stretch;
-  min-height: 100vh;
-  width: 100%;
+  height: 100vh;
+  max-height: 100vh;
+  width: 100vw;
+  overflow: hidden;
 }
 .wb * { box-sizing: border-box; }
 
@@ -93,11 +96,12 @@ export const CSS = `
 .applied-set { font-size: 11px; color: var(--accent-strong); margin: -2px 0 8px 0; display: flex; align-items: center; gap: 6px; }
 .applied-set button { background: none; border: none; color: var(--text-faint); cursor: pointer; font-size: 11px; text-decoration: underline; padding: 0; }
 
-.wb-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.wb-main { flex: 1; min-width: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
 .wb-head {
   padding: 12px 16px 0 16px;
   background: var(--surface);
   border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
 }
 .wb-title { font-size: 17px; font-weight: 700; letter-spacing: -.005em; margin: 0 0 3px 0; color: var(--text); }
 .wb-sub { font-size: 12.5px; color: var(--text-dim); margin: 0 0 18px 0; }
@@ -120,12 +124,13 @@ export const CSS = `
 .wb-step-btn.active .num { background: var(--accent); border-color: var(--accent); color: #fff; }
 .wb-step-btn.done .num { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
 .wb-step-btn:disabled { cursor: not-allowed; opacity: .5; }
-.wb-body { flex: 1; overflow-y: auto; background: var(--bg-canvas); }
-.wb-body.flush { padding: 0; }
+.wb-body { flex: 1; min-height: 0; overflow-y: auto; background: var(--bg-canvas); }
+.wb-body.flush { padding: 0; overflow: hidden; display: flex; flex-direction: column; }
 .wb-body.padded { padding: 20px 24px; }
 .wb-foot {
   display: flex; justify-content: space-between; align-items: center;
   padding: 15px 28px; border-top: 1px solid var(--border); background: var(--surface);
+  flex-shrink: 0;
 }
 .btn {
   font-family: var(--sans); font-size: 12.5px; font-weight: 600;
@@ -371,6 +376,166 @@ export const CSS = `
   white-space: nowrap;
 }
 
+/* Selected Columns display in Merge Step */
+.selected-cols-section {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-soft);
+}
+.selected-cols-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.selected-cols-icon {
+  color: var(--accent);
+  flex-shrink: 0;
+}
+.selected-cols-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+}
+.selected-cols-count {
+  font-size: 11px;
+  color: var(--text-dim);
+  font-family: var(--mono);
+  margin-left: auto;
+}
+.selected-cols-pills-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  max-height: 140px;
+  overflow-y: auto;
+  padding: 4px;
+  border-radius: 8px;
+}
+.col-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--mono);
+  font-size: 11.5px;
+  padding: 3px 9px;
+  border-radius: 6px;
+  background: var(--surface-alt);
+  color: var(--text);
+  border: 1px solid var(--border);
+  transition: all 0.12s ease;
+}
+.col-pill.is-key {
+  background: var(--amber-dim);
+  color: var(--amber);
+  border-color: var(--amber-line);
+  font-weight: 600;
+}
+.col-pill .key-icon {
+  color: var(--amber);
+}
+.col-pill .key-tag {
+  font-size: 9.5px;
+  font-weight: 700;
+  background: var(--amber-line);
+  color: #fff;
+  padding: 0 4px;
+  border-radius: 4px;
+  margin-left: 2px;
+}
+.col-pill .orig-name {
+  font-size: 10.5px;
+  color: var(--text-faint);
+}
+.no-cols-warn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-dim);
+  background: var(--surface-alt);
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px dashed var(--border);
+}
+.key-not-selected-note {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  color: var(--amber);
+  margin-top: 8px;
+  background: var(--amber-dim);
+  padding: 6px 10px;
+  border-radius: 6px;
+}
+.all-output-summary-section {
+  margin-top: 24px;
+  padding: 16px 18px;
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+.summary-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+.summary-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--text);
+}
+.summary-files-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.summary-file-block {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.summary-file-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.file-role-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+.file-role-badge.base {
+  background: var(--amber-dim);
+  color: var(--amber);
+  border: 1px solid var(--amber-line);
+}
+.file-role-badge.other {
+  background: var(--surface);
+  color: var(--text-dim);
+  border: 1px solid var(--border);
+}
+.summary-file-name {
+  font-family: var(--mono);
+  color: var(--text);
+}
+.summary-file-count {
+  font-size: 11px;
+  color: var(--text-dim);
+  font-family: var(--mono);
+}
+
+
 .merge-select, select {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -488,32 +653,32 @@ select:focus, .merge-select:focus {
 }
 
 /* ---------------------------------------------------------------
-   Sheet View & Right Selection Panel Layout (Flush Border-to-Border)
+   Sheet View & Right Selection Panel Layout (Clean Non-Overlapping Flex)
 ----------------------------------------------------------------*/
 .step-files-container {
-  display: flex; flex-direction: column; gap: 0; height: 100%; min-height: 0;
+  display: flex; flex-direction: column; flex: 1; min-height: 0; width: 100%;
 }
 
 .step-files-layout {
-  display: flex; gap: 0; align-items: stretch; flex: 1; min-height: 0;
+  display: flex; gap: 0; align-items: stretch; flex: 1; min-height: 0; width: 100%;
 }
 
 .sheet-main-view {
-  flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0; height: 100%;
+  flex: 1; min-width: 0; display: flex; flex-direction: column; min-height: 0;
 }
 
 .sheet-right-panel {
   width: 320px; flex-shrink: 0; background: var(--surface);
   border: 1px solid var(--border); border-radius: 0;
   padding: 16px; display: flex; flex-direction: column; gap: 12px;
-  position: sticky; top: 0; height: calc(100vh - 110px); max-height: calc(100vh - 110px); overflow-y: auto;
+  position: sticky; top: 0; height: 100%; overflow-y: auto;
   box-shadow: none;
 }
 
 .file-tabs-bar {
   display: flex; align-items: center; gap: 6px; overflow-x: auto;
   padding: 8px 16px 0 16px; background: var(--surface-alt);
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--border); flex-shrink: 0;
 }
 
 .file-tab {
@@ -551,13 +716,13 @@ select:focus, .merge-select:focus {
 .sheet-card {
   border: none; border-radius: 0;
   background: var(--surface); overflow: hidden;
-  box-shadow: none; flex: 1; display: flex; flex-direction: column;
+  box-shadow: none; flex: 1; min-height: 0; display: flex; flex-direction: column;
 }
 
 .sheet-card-head {
   display: flex; align-items: center; justify-content: space-between;
   padding: 10px 16px; border-bottom: 1px solid var(--border-soft);
-  background: var(--surface-alt); flex-wrap: wrap; gap: 8px;
+  background: var(--surface-alt); flex-wrap: wrap; gap: 8px; flex-shrink: 0;
 }
 
 .sheet-info {
@@ -565,7 +730,7 @@ select:focus, .merge-select:focus {
 }
 
 .sheet-table-wrap {
-  overflow: auto; flex: 1; height: calc(100vh - 180px); max-height: calc(100vh - 180px);
+  overflow: auto; flex: 1; min-height: 0;
   position: relative; background: var(--surface);
 }
 

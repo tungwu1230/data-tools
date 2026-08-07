@@ -103,6 +103,8 @@ export default function CsvMergeWorkbench() {
             <StepMergeConfig
               files={files} baseFileId={baseFileId} setBaseFileId={setBaseFileId}
               others={others} joinConfig={joinConfig} setJoinConfig={setJoinConfig}
+              selections={columnSelection.selections}
+              outputCols={outputColumns.outputCols}
             />
           )}
           {step === 3 && (
