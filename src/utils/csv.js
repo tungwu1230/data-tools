@@ -1,9 +1,6 @@
 import Papa from "papaparse";
 import { Dataset, columnsFromOutputCols } from "./dataset.js";
 
-let uid = 0;
-export const nextId = () => `id${Date.now()}_${uid++}`;
-
 export function parseCsvFile(file) {
   return new Promise((resolve, reject) => {
     file.text().then((text) => {

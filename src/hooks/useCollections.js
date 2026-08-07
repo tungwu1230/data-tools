@@ -1,6 +1,6 @@
 // @ts-nocheck -- plain JS project; window.storage is a runtime shim, not a real DOM type
 import { useState, useEffect, useCallback } from "react";
-import { nextId } from "../utils/csv.js";
+import { nextId } from "../utils/ids.js";
 
 const STORAGE_KEY = "csv-merge-collections";
 

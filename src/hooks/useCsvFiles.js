@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useMemo } from "react";
-import { parseCsvFile, nextId } from "../utils/csv.js";
+import { parseCsvFile } from "../utils/csv.js";
+import { nextId } from "../utils/ids.js";
 
 // owns the uploaded file list and which one is the merge base
 export function useCsvFiles() {
