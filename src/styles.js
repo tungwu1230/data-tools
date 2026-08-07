@@ -383,8 +383,8 @@ select:focus, .merge-select:focus {
 .out-table td { padding: 7px 10px; border-bottom: 1px solid var(--border-soft); vertical-align: middle; }
 .out-table tr:last-child td { border-bottom: none; }
 .out-table tr:hover td { background: var(--surface-alt); }
-.out-src { font-family: var(--mono); font-size: 11.5px; color: var(--text-dim); }
-.out-src .fname { color: var(--text-faint); }
+.out-src-file { font-size: 11.5px; color: var(--text-dim); }
+.out-src-col { font-family: var(--mono); font-size: 11.5px; color: var(--text); font-weight: 600; }
 .out-name-input {
   width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: 7px;
   color: var(--text); font-family: var(--mono); font-size: 12px; padding: 6px 9px;

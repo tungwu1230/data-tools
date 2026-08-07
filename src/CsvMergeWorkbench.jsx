@@ -110,7 +110,7 @@ export default function CsvMergeWorkbench() {
               selectAllOut={outputColumns.selectAllOut} clearOutSel={outputColumns.clearOutSel}
               prefixVal={outputColumns.prefixVal} setPrefixVal={outputColumns.setPrefixVal} suffixVal={outputColumns.suffixVal} setSuffixVal={outputColumns.setSuffixVal}
               applyPrefixSuffix={outputColumns.applyPrefixSuffix} moveOutputCol={outputColumns.moveOutputCol} renameOutputCol={outputColumns.renameOutputCol}
-              resetOutputName={outputColumns.resetOutputName} removeOutputCol={removeOutputCol}
+              resetOutputName={outputColumns.resetOutputName} resetSelectedOutputNames={outputColumns.resetSelectedOutputNames} removeOutputCol={removeOutputCol}
             />
           )}
           {step === 4 && (

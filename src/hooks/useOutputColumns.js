@@ -41,6 +41,10 @@ export function useOutputColumns(files, selections) {
   };
   const renameOutputCol = (id, name) => setOutputCols((prev) => prev.map((oc) => (oc.id === id ? { ...oc, outputName: name } : oc)));
   const resetOutputName = (id) => setOutputCols((prev) => prev.map((oc) => (oc.id === id ? { ...oc, outputName: oc.column } : oc)));
+  const resetSelectedOutputNames = () => {
+    if (selectedOutIds.size === 0) { alert("請先勾選要還原名稱的欄位。"); return; }
+    setOutputCols((prev) => prev.map((oc) => (selectedOutIds.has(oc.id) ? { ...oc, outputName: oc.column } : oc)));
+  };
   const removeOutputCol = (id) => setOutputCols((prev) => prev.filter((o) => o.id !== id));
 
   const toggleOutSelect = (id) => setSelectedOutIds((prev) => {
@@ -58,6 +62,6 @@ export function useOutputColumns(files, selections) {
   return {
     outputCols, selectedOutIds, prefixVal, setPrefixVal, suffixVal, setSuffixVal,
     toggleOutSelect, selectAllOut, clearOutSel, applyPrefixSuffix,
-    moveOutputCol, renameOutputCol, resetOutputName, removeOutputCol,
+    moveOutputCol, renameOutputCol, resetOutputName, resetSelectedOutputNames, removeOutputCol,
   };
 }
