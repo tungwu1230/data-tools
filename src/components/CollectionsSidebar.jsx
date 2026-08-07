@@ -1,3 +1,5 @@
+import { useState } from "react";
+import ConfirmModal from "./ConfirmModal.jsx";
 import { Plus, Edit2, Trash2 } from "lucide-react";
 
 export default function CollectionsSidebar(props) {
@@ -9,6 +11,18 @@ export default function CollectionsSidebar(props) {
     editingId, openCreateBlank, openEditCollection, cancelCreate, saveCollection,
   } = props;
 
+  const [collectionToDelete, setCollectionToDelete] = useState(null);
+
+  const handleConfirmDelete = () => {
+    if (collectionToDelete) {
+      deleteCollection(collectionToDelete.id);
+      if (editingId === collectionToDelete.id) {
+        cancelCreate();
+      }
+      setCollectionToDelete(null);
+    }
+  };
+
   const fromDataFile = files.find((f) => f.id === fromDataFileId) || null;
   const fromDataVisible = fromDataFile
     ? (fromDataFilterText.trim()
@@ -18,6 +32,16 @@ export default function CollectionsSidebar(props) {
 
   return (
     <div className="wb-sidebar">
+      <ConfirmModal
+        isOpen={!!collectionToDelete}
+        title="確定要刪除此集合？"
+        message={collectionToDelete ? `刪除集合「${collectionToDelete.name}」後將無法恢復。` : ""}
+        confirmText="確定刪除"
+        cancelText="取消"
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setCollectionToDelete(null)}
+      />
+
       <div className="sidebar-head">
         <h4>欄位集合</h4>
         {sidebarMode === "list" && (
@@ -56,7 +80,7 @@ export default function CollectionsSidebar(props) {
                 <button
                   className="btn ghost xs"
                   style={{ display: "inline-flex", alignItems: "center", gap: 3 }}
-                  onClick={() => deleteCollection(c.id)}
+                  onClick={() => setCollectionToDelete(c)}
                 >
                   <Trash2 size={11} />
                   <span>刪除</span>
@@ -118,7 +142,10 @@ export default function CollectionsSidebar(props) {
               <button
                 className="btn ghost xs edit-delete"
                 style={{ display: "inline-flex", alignItems: "center", gap: 3 }}
-                onClick={() => { deleteCollection(editingId); cancelCreate(); }}
+                onClick={() => {
+                  const target = collections.find((x) => x.id === editingId) || { id: editingId, name: createName || "此集合" };
+                  setCollectionToDelete(target);
+                }}
               >
                 <Trash2 size={11} />
                 <span>刪除這個集合</span>

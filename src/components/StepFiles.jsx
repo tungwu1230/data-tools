@@ -1,3 +1,5 @@
+import { useState } from "react";
+import ConfirmModal from "./ConfirmModal.jsx";
 import { highlightMatch } from "../utils/highlightMatch.jsx";
 import {
   ChevronRight,
@@ -19,8 +21,27 @@ export default function StepFiles(props) {
     baseFileId,
   } = props;
 
+  const [fileToDelete, setFileToDelete] = useState(null);
+
+  const handleConfirmRemove = () => {
+    if (fileToDelete) {
+      removeFile(fileToDelete.id);
+      setFileToDelete(null);
+    }
+  };
+
   return (
     <div>
+      <ConfirmModal
+        isOpen={!!fileToDelete}
+        title="確定要移除此檔案？"
+        message={fileToDelete ? `移除「${fileToDelete.name}」後，其已選取的欄位與設定將會一併清除。` : ""}
+        confirmText="確定移除"
+        cancelText="取消"
+        onConfirm={handleConfirmRemove}
+        onCancel={() => setFileToDelete(null)}
+      />
+
       <div className="dropzone">
         <div>
           <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 3, display: "flex", alignItems: "center", gap: 6 }}>
@@ -61,7 +82,7 @@ export default function StepFiles(props) {
               <button
                 className="btn ghost xs"
                 style={{ display: "inline-flex", alignItems: "center", gap: 4 }}
-                onClick={(e) => { e.stopPropagation(); removeFile(file.id); }}
+                onClick={(e) => { e.stopPropagation(); setFileToDelete(file); }}
               >
                 <Trash2 size={12} />
                 <span>移除</span>
