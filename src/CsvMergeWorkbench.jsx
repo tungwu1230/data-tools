@@ -14,11 +14,13 @@ import StepMergeConfig from "./components/StepMergeConfig.jsx";
 import StepOutput from "./components/StepOutput.jsx";
 import StepPreview from "./components/StepPreview.jsx";
 import ColumnSelectionSidebar from "./components/ColumnSelectionSidebar.jsx";
-import { ArrowLeft, ArrowRight } from "lucide-react";
+import ExploreMode from "./components/ExploreMode.jsx";
+import { ArrowLeft, ArrowRight, Activity, GitMerge } from "lucide-react";
 
 import StepDataQuality from "./components/StepDataQuality.jsx";
 
 export default function CsvMergeWorkbench({ storage }) {
+  const [mode, setMode] = useState("merge"); // "merge" | "explore" — explore mode works right after upload, independent of wizard step-gating
   const [step, setStep] = useState(1);
   const [collapsed, setCollapsed] = useState({});
   const [previewOpen, setPreviewOpen] = useState({});
@@ -49,44 +51,70 @@ export default function CsvMergeWorkbench({ storage }) {
     <div className="wb">
       <style>{CSS}</style>
 
-      <CollectionsSidebar
-        collections={collections}
-        collectionsLoaded={collectionsLoaded}
-        deleteCollection={deleteCollection}
-        files={files}
-        sidebarMode={sidebar.sidebarMode}
-        createMode={sidebar.createMode}
-        setCreateMode={sidebar.setCreateMode}
-        createName={sidebar.createName}
-        setCreateName={sidebar.setCreateName}
-        manualText={sidebar.manualText}
-        setManualText={sidebar.setManualText}
-        fromDataFileId={sidebar.fromDataFileId}
-        setFromDataFileId={sidebar.setFromDataFileId}
-        fromDataChecked={sidebar.fromDataChecked}
-        toggleFromDataChecked={sidebar.toggleFromDataChecked}
-        fromDataFilterText={sidebar.fromDataFilterText}
-        setFromDataFilterText={sidebar.setFromDataFilterText}
-        editingId={sidebar.editingId}
-        openCreateBlank={sidebar.openCreateBlank}
-        openEditCollection={sidebar.openEditCollection}
-        cancelCreate={sidebar.cancelCreate}
-        saveCollection={sidebar.saveCollection}
-      />
+      {mode === "merge" && (
+        <CollectionsSidebar
+          collections={collections}
+          collectionsLoaded={collectionsLoaded}
+          deleteCollection={deleteCollection}
+          files={files}
+          sidebarMode={sidebar.sidebarMode}
+          createMode={sidebar.createMode}
+          setCreateMode={sidebar.setCreateMode}
+          createName={sidebar.createName}
+          setCreateName={sidebar.setCreateName}
+          manualText={sidebar.manualText}
+          setManualText={sidebar.setManualText}
+          fromDataFileId={sidebar.fromDataFileId}
+          setFromDataFileId={sidebar.setFromDataFileId}
+          fromDataChecked={sidebar.fromDataChecked}
+          toggleFromDataChecked={sidebar.toggleFromDataChecked}
+          fromDataFilterText={sidebar.fromDataFilterText}
+          setFromDataFilterText={sidebar.setFromDataFilterText}
+          editingId={sidebar.editingId}
+          openCreateBlank={sidebar.openCreateBlank}
+          openEditCollection={sidebar.openEditCollection}
+          cancelCreate={sidebar.cancelCreate}
+          saveCollection={sidebar.saveCollection}
+        />
+      )}
 
       <div className="wb-main">
         <div className="wb-head">
-          <div className="wb-steps">
-            <StepTab n={1} label="檔案與欄位" active={step === 1} done={step > 1} onClick={() => setStep(1)} />
-            <StepTab n={2} label="合併設定" active={step === 2} done={step > 2} onClick={() => canStep2 && setStep(2)} disabled={!canStep2} />
-            <StepTab n={3} label="輸出設定" active={step === 3} done={step > 3} onClick={() => canStep3 && setStep(3)} disabled={!canStep3} />
-            <StepTab n={4} label="預覽與匯出" active={step === 4} done={step > 4} onClick={() => canStep4 && setStep(4)} disabled={!canStep4} />
-            <StepTab n={5} label="資料品質報告" active={step === 5} done={false} onClick={() => canStep5 && setStep(5)} disabled={!canStep5} />
+          <div className="wb-mode-toggle">
+            <button
+              className={`wb-mode-btn ${mode === "merge" ? "active" : ""}`}
+              onClick={() => setMode("merge")}
+              style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
+            >
+              <GitMerge size={13} />
+              <span>合併模式</span>
+            </button>
+            <button
+              className={`wb-mode-btn ${mode === "explore" ? "active" : ""}`}
+              onClick={() => setMode("explore")}
+              disabled={files.length === 0}
+              title={files.length === 0 ? "請先上傳至少一份 CSV" : "檢視欄位分佈，不需先完成合併設定"}
+              style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
+            >
+              <Activity size={13} />
+              <span>探索模式</span>
+            </button>
           </div>
+
+          {mode === "merge" && (
+            <div className="wb-steps">
+              <StepTab n={1} label="檔案與欄位" active={step === 1} done={step > 1} onClick={() => setStep(1)} />
+              <StepTab n={2} label="合併設定" active={step === 2} done={step > 2} onClick={() => canStep2 && setStep(2)} disabled={!canStep2} />
+              <StepTab n={3} label="輸出設定" active={step === 3} done={step > 3} onClick={() => canStep3 && setStep(3)} disabled={!canStep3} />
+              <StepTab n={4} label="預覽與匯出" active={step === 4} done={step > 4} onClick={() => canStep4 && setStep(4)} disabled={!canStep4} />
+              <StepTab n={5} label="資料品質報告" active={step === 5} done={false} onClick={() => canStep5 && setStep(5)} disabled={!canStep5} />
+            </div>
+          )}
         </div>
 
-        <div className={`wb-body ${step === 1 ? "flush" : "padded"}`}>
-          {step === 1 && (
+        <div className={`wb-body ${mode === "merge" && step === 1 ? "flush" : "padded"}`}>
+          {mode === "explore" && <ExploreMode files={files} />}
+          {mode === "merge" && step === 1 && (
             <StepFiles
               files={files} loadingFiles={loadingFiles} fileInputRef={fileInputRef} handleUpload={handleUpload} removeFile={removeFile}
               collapsed={collapsed} setCollapsed={setCollapsed} previewOpen={previewOpen} setPreviewOpen={setPreviewOpen}
@@ -98,7 +126,7 @@ export default function CsvMergeWorkbench({ storage }) {
               activeFileId={activeFileId} setActiveFileId={setActiveFileId}
             />
           )}
-          {step === 2 && (
+          {mode === "merge" && step === 2 && (
             <StepMergeConfig
               files={files} baseFileId={baseFileId} setBaseFileId={setBaseFileId}
               others={others} joinConfig={joinConfig} setJoinConfig={setJoinConfig}
@@ -107,7 +135,7 @@ export default function CsvMergeWorkbench({ storage }) {
               outputCols={outputColumns.outputCols}
             />
           )}
-          {step === 3 && (
+          {mode === "merge" && step === 3 && (
             <StepOutput
               files={files} collections={collections}
               outputCols={outputColumns.outputCols} selectedOutIds={outputColumns.selectedOutIds} toggleOutSelect={outputColumns.toggleOutSelect}
@@ -118,48 +146,50 @@ export default function CsvMergeWorkbench({ storage }) {
               resetOutputName={outputColumns.resetOutputName} resetSelectedOutputNames={outputColumns.resetSelectedOutputNames}
             />
           )}
-          {step === 4 && (
+          {mode === "merge" && step === 4 && (
             <StepPreview merged={merged} exporting={exporting} exportCsv={exportCsv} goToStep5={() => setStep(5)} />
           )}
-          {step === 5 && (
+          {mode === "merge" && step === 5 && (
             <StepDataQuality merged={merged} baseFile={baseFile} files={files} exportCsv={exportCsv} exporting={exporting} />
           )}
         </div>
 
-        <div className="wb-foot">
-          <button
-            className="btn ghost"
-            style={{ display: "inline-flex", alignItems: "center", gap: 5 }}
-            disabled={step === 1}
-            onClick={() => setStep((s) => Math.max(1, s - 1))}
-          >
-            <ArrowLeft size={14} />
-            <span>上一步</span>
-          </button>
-          {step < 5 ? (
+        {mode === "merge" && (
+          <div className="wb-foot">
             <button
-              className="btn primary"
+              className="btn ghost"
               style={{ display: "inline-flex", alignItems: "center", gap: 5 }}
-              disabled={isNextDisabled()}
-              onClick={() => setStep((s) => s + 1)}
+              disabled={step === 1}
+              onClick={() => setStep((s) => Math.max(1, s - 1))}
             >
-              <span>{step === 4 ? "查看資料品質報告" : "下一步"}</span>
-              <ArrowRight size={14} />
+              <ArrowLeft size={14} />
+              <span>上一步</span>
             </button>
-          ) : (
-            <button
-              className="btn primary"
-              style={{ display: "inline-flex", alignItems: "center", gap: 5 }}
-              onClick={exportCsv}
-              disabled={exporting || !merged || merged.total === 0}
-            >
-              <span>{exporting ? "匯出中…" : "匯出 CSV"}</span>
-            </button>
-          )}
-        </div>
+            {step < 5 ? (
+              <button
+                className="btn primary"
+                style={{ display: "inline-flex", alignItems: "center", gap: 5 }}
+                disabled={isNextDisabled()}
+                onClick={() => setStep((s) => s + 1)}
+              >
+                <span>{step === 4 ? "查看資料品質報告" : "下一步"}</span>
+                <ArrowRight size={14} />
+              </button>
+            ) : (
+              <button
+                className="btn primary"
+                style={{ display: "inline-flex", alignItems: "center", gap: 5 }}
+                onClick={exportCsv}
+                disabled={exporting || !merged || merged.total === 0}
+              >
+                <span>{exporting ? "匯出中…" : "匯出 CSV"}</span>
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
-      {step === 1 && files.length > 0 && (
+      {mode === "merge" && step === 1 && files.length > 0 && (
         <ColumnSelectionSidebar
           files={files}
           activeFileId={activeFileId}
