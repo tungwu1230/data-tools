@@ -120,7 +120,7 @@ export default function CsvMergeWorkbench() {
             />
           )}
           {step === 4 && (
-            <StepPreview merged={merged} exporting={exporting} exportCsv={exportCsv} outputCols={outputColumns.outputCols} baseFile={baseFile} />
+            <StepPreview merged={merged} exporting={exporting} exportCsv={exportCsv} outputCols={outputColumns.outputCols} baseFile={baseFile} files={files} />
           )}
         </div>
 
