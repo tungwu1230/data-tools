@@ -1,3 +1,5 @@
+import { Plus, Edit2, Trash2 } from "lucide-react";
+
 export default function CollectionsSidebar(props) {
   const {
     collections, collectionsLoaded, deleteCollection, files,
@@ -19,7 +21,14 @@ export default function CollectionsSidebar(props) {
       <div className="sidebar-head">
         <h4>欄位集合</h4>
         {sidebarMode === "list" && (
-          <button className="btn primary xs" onClick={() => openCreateBlank("manual")}>+ 新增集合</button>
+          <button
+            className="btn primary xs"
+            style={{ display: "inline-flex", alignItems: "center", gap: 4 }}
+            onClick={() => openCreateBlank("manual")}
+          >
+            <Plus size={13} />
+            <span>新增集合</span>
+          </button>
         )}
       </div>
 
@@ -36,8 +45,22 @@ export default function CollectionsSidebar(props) {
               </div>
               <div className="collection-row-cols">{c.columns.slice(0, 8).join(", ")}{c.columns.length > 8 ? "…" : ""}</div>
               <div style={{ display: "flex", gap: 6 }}>
-                <button className="btn ghost xs" onClick={() => openEditCollection(c)}>編輯</button>
-                <button className="btn ghost xs" onClick={() => deleteCollection(c.id)}>刪除</button>
+                <button
+                  className="btn ghost xs"
+                  style={{ display: "inline-flex", alignItems: "center", gap: 3 }}
+                  onClick={() => openEditCollection(c)}
+                >
+                  <Edit2 size={11} />
+                  <span>編輯</span>
+                </button>
+                <button
+                  className="btn ghost xs"
+                  style={{ display: "inline-flex", alignItems: "center", gap: 3 }}
+                  onClick={() => deleteCollection(c.id)}
+                >
+                  <Trash2 size={11} />
+                  <span>刪除</span>
+                </button>
               </div>
             </div>
           ))}
@@ -74,7 +97,7 @@ export default function CollectionsSidebar(props) {
             ) : (
               <>
                 <select value={fromDataFileId || ""} onChange={(e) => setFromDataFileId(e.target.value)}>
-                  {files.map((f) => <option key={f.id} value={f.id}>{f.name}</option>)}
+                  {files.map((f) => <option key={f.id} value={f.name}>{f.name}</option>)}
                 </select>
                 <input type="text" placeholder="搜尋欄位開頭…" value={fromDataFilterText} onChange={(e) => setFromDataFilterText(e.target.value)} />
                 <div className="col-list small">
@@ -94,9 +117,11 @@ export default function CollectionsSidebar(props) {
             {editingId && (
               <button
                 className="btn ghost xs edit-delete"
+                style={{ display: "inline-flex", alignItems: "center", gap: 3 }}
                 onClick={() => { deleteCollection(editingId); cancelCreate(); }}
               >
-                刪除這個集合
+                <Trash2 size={11} />
+                <span>刪除這個集合</span>
               </button>
             )}
             <button className="btn ghost xs" onClick={cancelCreate}>取消</button>

@@ -1,4 +1,16 @@
 import { highlightMatch } from "../utils/highlightMatch.jsx";
+import {
+  ChevronRight,
+  ChevronDown,
+  GitMerge,
+  ArrowRight,
+  Upload,
+  Trash2,
+  BookmarkPlus,
+  Eye,
+  EyeOff,
+  FileSpreadsheet
+} from "lucide-react";
 
 export default function StepFiles(props) {
   const {
@@ -13,11 +25,15 @@ export default function StepFiles(props) {
     <div>
       <div className="dropzone">
         <div>
-          <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 3 }}>上傳 CSV 檔案</div>
+          <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 3, display: "flex", alignItems: "center", gap: 6 }}>
+            <FileSpreadsheet size={16} color="var(--accent)" />
+            <span>上傳 CSV 檔案</span>
+          </div>
           <div className="dropzone-text">可一次選取多份檔案；每份檔案獨立顯示欄位與資料預覽。</div>
         </div>
-        <label className="btn primary" style={{ cursor: "pointer" }}>
-          {loadingFiles ? "讀取中…" : "選擇檔案"}
+        <label className="btn primary" style={{ cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6 }}>
+          <Upload size={14} />
+          <span>{loadingFiles ? "讀取中…" : "選擇檔案"}</span>
           <input ref={fileInputRef} type="file" accept=".csv" multiple onChange={handleUpload} />
         </label>
       </div>
@@ -30,13 +46,7 @@ export default function StepFiles(props) {
         <div className="merge-panel">
           <div className="merge-panel-head">
             <div className="merge-panel-title-row">
-              <svg className="merge-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="18" cy="18" r="3"/>
-                <circle cx="6" cy="6" r="3"/>
-                <circle cx="6" cy="18" r="3"/>
-                <path d="M6 9v6"/>
-                <path d="M9 6h6a3 3 0 0 1 3 3v6"/>
-              </svg>
+              <GitMerge className="merge-icon" size={18} />
               <h4>合併設定 (Left Join)</h4>
             </div>
             <p>選一份「主檔案」作為合併基準，其餘檔案透過指定的比對欄位（Key）將資料合併進來。</p>
@@ -103,7 +113,7 @@ export default function StepFiles(props) {
                         </div>
 
                         <div className="mapping-connector">
-                          <span className="connector-arrow">➔</span>
+                          <ArrowRight className="connector-arrow" size={16} />
                           <span className="connector-text">對應主檔案</span>
                         </div>
 
@@ -149,19 +159,42 @@ export default function StepFiles(props) {
         return (
           <div className={`file-card ${file.id === baseFileId ? "is-base" : ""}`} key={file.id}>
             <div className="file-card-head" onClick={() => setCollapsed((p) => ({ ...p, [file.id]: !p[file.id] }))}>
-              <span className="chev">{isCollapsed ? "▸" : "▾"}</span>
+              <span className="chev">
+                {isCollapsed ? <ChevronRight size={15} /> : <ChevronDown size={15} />}
+              </span>
               <span className="file-name">{file.name}</span>
               <span className="file-meta">{file.rowCount} 列 · {file.headers.length} 欄</span>
               {file.id === baseFileId && files.length > 1 && <span className="badge">主檔案</span>}
               {sel.size > 0 && <span className="sel-count">已選 {sel.size}</span>}
               <span style={{ flex: 1 }} />
-              <button className="btn ghost xs" onClick={(e) => { e.stopPropagation(); removeFile(file.id); }}>移除</button>
+              <button
+                className="btn ghost xs"
+                style={{ display: "inline-flex", alignItems: "center", gap: 4 }}
+                onClick={(e) => { e.stopPropagation(); removeFile(file.id); }}
+              >
+                <Trash2 size={12} />
+                <span>移除</span>
+              </button>
             </div>
 
             {!isCollapsed && (
               <div className="file-card-body">
-                <button className="preview-toggle" onClick={() => setPreviewOpen((p) => ({ ...p, [file.id]: !p[file.id] }))}>
-                  {isOpen ? "隱藏資料預覽 ▾" : "檢視資料預覽（前 8 列）▸"}
+                <button
+                  className="preview-toggle"
+                  style={{ display: "inline-flex", alignItems: "center", gap: 5 }}
+                  onClick={() => setPreviewOpen((p) => ({ ...p, [file.id]: !p[file.id] }))}
+                >
+                  {isOpen ? (
+                    <>
+                      <EyeOff size={13} />
+                      <span>隱藏資料預覽</span>
+                    </>
+                  ) : (
+                    <>
+                      <Eye size={13} />
+                      <span>檢視資料預覽（前 8 列）</span>
+                    </>
+                  )}
                 </button>
                 {isOpen && (
                   <div className="preview-wrap">
@@ -184,7 +217,14 @@ export default function StepFiles(props) {
                   />
                   <button className="btn xs" onClick={() => selectAllVisible(file)}>全選目前顯示</button>
                   <button className="btn ghost xs" onClick={() => clearVisible(file)}>取消勾選目前顯示</button>
-                  <button className="btn ghost xs" onClick={() => openCreateFromFile(file, sel)}>存成集合</button>
+                  <button
+                    className="btn ghost xs"
+                    style={{ display: "inline-flex", alignItems: "center", gap: 4 }}
+                    onClick={() => openCreateFromFile(file, sel)}
+                  >
+                    <BookmarkPlus size={12} />
+                    <span>存成集合</span>
+                  </button>
                 </div>
                 {appliedCollection && (
                   <div className="applied-set">

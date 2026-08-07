@@ -12,6 +12,7 @@ import CollectionsSidebar from "./components/CollectionsSidebar.jsx";
 import StepFiles from "./components/StepFiles.jsx";
 import StepOutput from "./components/StepOutput.jsx";
 import StepPreview from "./components/StepPreview.jsx";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 
 export default function CsvMergeWorkbench() {
   const [step, setStep] = useState(1);
@@ -102,9 +103,25 @@ export default function CsvMergeWorkbench() {
         </div>
 
         <div className="wb-foot">
-          <button className="btn ghost" disabled={step === 1} onClick={() => setStep((s) => Math.max(1, s - 1))}>← 上一步</button>
+          <button
+            className="btn ghost"
+            style={{ display: "inline-flex", alignItems: "center", gap: 5 }}
+            disabled={step === 1}
+            onClick={() => setStep((s) => Math.max(1, s - 1))}
+          >
+            <ArrowLeft size={14} />
+            <span>上一步</span>
+          </button>
           {step < 3 ? (
-            <button className="btn primary" disabled={step === 1 ? !canStep2 : !canStep3} onClick={() => setStep((s) => s + 1)}>下一步 →</button>
+            <button
+              className="btn primary"
+              style={{ display: "inline-flex", alignItems: "center", gap: 5 }}
+              disabled={step === 1 ? !canStep2 : !canStep3}
+              onClick={() => setStep((s) => s + 1)}
+            >
+              <span>下一步</span>
+              <ArrowRight size={14} />
+            </button>
           ) : (
             <span style={{ fontSize: 11.5, color: "var(--text-faint)" }}>{merged ? `共 ${merged.total} 列 · ${outputColumns.outputCols.length} 欄` : ""}</span>
           )}

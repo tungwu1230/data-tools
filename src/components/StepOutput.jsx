@@ -1,3 +1,5 @@
+import { ChevronUp, ChevronDown, RotateCcw } from "lucide-react";
+
 export default function StepOutput({ outputCols, selectedOutIds, toggleOutSelect, selectAllOut, clearOutSel, prefixVal, setPrefixVal, suffixVal, setSuffixVal, applyPrefixSuffix, moveOutputCol, renameOutputCol, resetOutputName, removeOutputCol }) {
   return (
     <div>
@@ -29,14 +31,26 @@ export default function StepOutput({ outputCols, selectedOutIds, toggleOutSelect
               <td><input type="checkbox" checked={selectedOutIds.has(oc.id)} onChange={() => toggleOutSelect(oc.id)} /></td>
               <td>
                 <div className="move-btns">
-                  <button disabled={i === 0} onClick={() => moveOutputCol(i, -1)}>▲</button>
-                  <button disabled={i === outputCols.length - 1} onClick={() => moveOutputCol(i, 1)}>▼</button>
+                  <button disabled={i === 0} onClick={() => moveOutputCol(i, -1)}>
+                    <ChevronUp size={12} />
+                  </button>
+                  <button disabled={i === outputCols.length - 1} onClick={() => moveOutputCol(i, 1)}>
+                    <ChevronDown size={12} />
+                  </button>
                 </div>
               </td>
               <td className="out-src"><span className="fname">{oc.fileName}</span> · {oc.column}</td>
               <td><input className="out-name-input" value={oc.outputName} onChange={(e) => renameOutputCol(oc.id, e.target.value)} /></td>
               <td>
-                <button className="btn ghost xs" title="還原成原始欄位名稱" onClick={() => resetOutputName(oc.id)}>還原</button>
+                <button
+                  className="btn ghost xs"
+                  title="還原成原始欄位名稱"
+                  style={{ display: "inline-flex", alignItems: "center", gap: 3 }}
+                  onClick={() => resetOutputName(oc.id)}
+                >
+                  <RotateCcw size={11} />
+                  <span>還原</span>
+                </button>
               </td>
             </tr>
           ))}

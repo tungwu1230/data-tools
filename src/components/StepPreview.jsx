@@ -1,3 +1,5 @@
+import { Download, AlertTriangle } from "lucide-react";
+
 export default function StepPreview({ merged, exporting, exportCsv, outputCols }) {
   if (!merged) return <div className="empty">尚未計算合併結果。</div>;
   return (
@@ -7,7 +9,14 @@ export default function StepPreview({ merged, exporting, exportCsv, outputCols }
         <div className="stat"><div className="n">{outputCols.length}</div><div className="l">輸出欄數</div></div>
       </div>
       {merged.warnings.length > 0 && (
-        <div className="warn">{merged.warnings.map((w, i) => <div key={i}>⚠ {w}</div>)}</div>
+        <div className="warn">
+          {merged.warnings.map((w, i) => (
+            <div key={i} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <AlertTriangle size={14} color="var(--amber)" />
+              <span>{w}</span>
+            </div>
+          ))}
+        </div>
       )}
       <div className="final-preview-wrap">
         <table className="final-preview">
@@ -21,7 +30,15 @@ export default function StepPreview({ merged, exporting, exportCsv, outputCols }
       </div>
       {merged.total > 100 && <div style={{ fontSize: 11, color: "var(--text-faint)", margin: "8px 0" }}>僅預覽前 100 列，匯出檔案會包含全部 {merged.total} 列。</div>}
       <div style={{ marginTop: 14 }}>
-        <button className="btn primary" onClick={exportCsv} disabled={exporting || merged.total === 0}>{exporting ? "匯出中…" : "匯出 CSV"}</button>
+        <button
+          className="btn primary"
+          style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
+          onClick={exportCsv}
+          disabled={exporting || merged.total === 0}
+        >
+          <Download size={15} />
+          <span>{exporting ? "匯出中…" : "匯出 CSV"}</span>
+        </button>
       </div>
     </div>
   );
