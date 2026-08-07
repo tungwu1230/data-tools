@@ -1,12 +1,12 @@
 import { Download, AlertTriangle, BarChart2 } from "lucide-react";
 
-export default function StepPreview({ merged, exporting, exportCsv, outputCols, goToStep5 }) {
+export default function StepPreview({ merged, exporting, exportCsv, goToStep5 }) {
   if (!merged) return <div className="empty">尚未計算合併結果。</div>;
   return (
     <div>
       <div className="stat-strip">
         <div className="stat"><div className="n">{merged.total.toLocaleString()}</div><div className="l">輸出列數</div></div>
-        <div className="stat"><div className="n">{outputCols.length}</div><div className="l">輸出欄數</div></div>
+        <div className="stat"><div className="n">{merged.columns.length}</div><div className="l">輸出欄數</div></div>
       </div>
 
       {merged.warnings.length > 0 && (
@@ -24,16 +24,16 @@ export default function StepPreview({ merged, exporting, exportCsv, outputCols, 
         <table className="final-preview">
           <thead>
             <tr>
-              {outputCols.map((oc) => (
-                <th key={oc.id}>{oc.outputName || oc.column}</th>
+              {merged.columns.map((c) => (
+                <th key={c.id}>{c.label}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {merged.rows.slice(0, 100).map((r, i) => (
               <tr key={i}>
-                {outputCols.map((oc) => (
-                  <td key={oc.id}>{String(r[oc.outputName || oc.column] ?? "")}</td>
+                {merged.columns.map((c) => (
+                  <td key={c.id}>{String(r[c.id] ?? "")}</td>
                 ))}
               </tr>
             ))}

@@ -2,14 +2,14 @@ import { useState, useMemo } from "react";
 import { Download, BarChart2, CheckCircle2, FileText, Search, Activity, Copy, Check } from "lucide-react";
 import { analyzeDataQuality } from "../utils/quality.js";
 
-export default function StepDataQuality({ merged, outputCols, baseFile, files = [], exportCsv, exporting }) {
+export default function StepDataQuality({ merged, baseFile, files = [], exportCsv, exporting }) {
   const [searchFilter, setSearchFilter] = useState("");
   const [copied, setCopied] = useState(false);
 
   const qualityData = useMemo(() => {
     if (!merged || !merged.rows) return null;
-    return analyzeDataQuality(merged.rows, outputCols, files);
-  }, [merged, outputCols, files]);
+    return analyzeDataQuality(merged);
+  }, [merged]);
 
   if (!merged || !qualityData) return <div className="empty">尚未計算合併結果。</div>;
 
@@ -24,11 +24,8 @@ export default function StepDataQuality({ merged, outputCols, baseFile, files = 
 
   const copyToClipboard = () => {
     if (!merged || merged.rows.length === 0) return;
-    const headers = outputCols.map((oc) => oc.outputName || oc.column).join("\t");
-    const rowsStr = merged.rows
-      .map((r) => outputCols.map((oc) => r[oc.outputName || oc.column] ?? "").join("\t"))
-      .join("\n");
-    const tsvStr = `${headers}\n${rowsStr}`;
+    // Dataset.toMatrix() → [labels, ...rows]; join as TSV for spreadsheet paste.
+    const tsvStr = merged.toMatrix().map((row) => row.join("\t")).join("\n");
 
     navigator.clipboard.writeText(tsvStr).then(() => {
       setCopied(true);

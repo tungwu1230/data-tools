@@ -16,7 +16,8 @@ export function useMerge(step, baseFile, others, outputCols, joinConfig, joinTyp
     if (!merged || merged.rows.length === 0) return;
     setExporting(true);
     try {
-      const csv = Papa.unparse(merged.rows);
+      // Dataset.toMatrix() yields [labels, ...rows]; Papa turns the array-of-arrays into CSV.
+      const csv = Papa.unparse(merged.toMatrix());
       const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8;" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");

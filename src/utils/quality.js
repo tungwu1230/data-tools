@@ -1,26 +1,25 @@
-export function analyzeDataQuality(rows, outputCols, files = []) {
-  if (!rows || rows.length === 0 || !outputCols || outputCols.length === 0) {
+// Consumes a Dataset (see utils/dataset.js). The dataset's columns already carry
+// their fileName, so this no longer needs a separate file registry.
+export function analyzeDataQuality(dataset) {
+  if (!dataset || !dataset.columns || dataset.columns.length === 0 || !dataset.rows || dataset.rows.length === 0) {
     return {
       totalRows: 0,
       totalCols: 0,
       totalCells: 0,
       totalFilledCells: 0,
-      overallCompleteness: "0.0",
+      overallCompleteness: 0,
       colStats: [],
     };
   }
 
-  const totalRows = rows.length;
-  const totalCols = outputCols.length;
+  const totalRows = dataset.rows.length;
+  const totalCols = dataset.columns.length;
   const totalCells = totalRows * totalCols;
   let totalFilledCells = 0;
 
-  const fileMap = new Map(files.map((f) => [f.id, f]));
-
-  const colStats = outputCols.map((oc) => {
-    const colKey = oc.outputName || oc.column;
-    const file = fileMap.get(oc.fileId);
-    const fileName = file ? file.name : "未知檔案";
+  const colStats = dataset.columns.map((col) => {
+    const colKey = col.id;
+    const fileName = col.fileName || "未知檔案";
 
     let filledCount = 0;
     const valMap = new Map();
@@ -29,7 +28,7 @@ export function analyzeDataQuality(rows, outputCols, files = []) {
     let numMin = Infinity;
     let numMax = -Infinity;
 
-    rows.forEach((r) => {
+    dataset.rows.forEach((r) => {
       const rawVal = r[colKey];
       if (rawVal !== undefined && rawVal !== null && String(rawVal).trim() !== "") {
         filledCount++;
@@ -55,7 +54,7 @@ export function analyzeDataQuality(rows, outputCols, files = []) {
 
     totalFilledCells += filledCount;
     const emptyCount = totalRows - filledCount;
-    const completenessPct = totalRows > 0 ? ((filledCount / totalRows) * 100).toFixed(1) : "0.0";
+    const completenessPct = totalRows > 0 ? Number(((filledCount / totalRows) * 100).toFixed(1)) : 0;
     const uniqueCount = valMap.size;
 
     // Infer dominant data type
@@ -85,28 +84,28 @@ export function analyzeDataQuality(rows, outputCols, files = []) {
     summary.topValues = sortedValues;
 
     return {
-      id: oc.id,
-      outputName: colKey,
-      originalColumn: oc.column,
-      fileId: oc.fileId,
+      id: col.id,
+      outputName: col.label,
+      originalColumn: col.originalColumn,
+      fileId: col.fileId,
       fileName,
       filledCount,
       emptyCount,
-      completenessPct: Number(completenessPct),
+      completenessPct,
       uniqueCount,
       inferredType,
       summary,
     };
   });
 
-  const overallCompleteness = totalCells > 0 ? ((totalFilledCells / totalCells) * 100).toFixed(1) : "0.0";
+  const overallCompleteness = totalCells > 0 ? Number(((totalFilledCells / totalCells) * 100).toFixed(1)) : 0;
 
   return {
     totalRows,
     totalCols,
     totalCells,
     totalFilledCells,
-    overallCompleteness: Number(overallCompleteness),
+    overallCompleteness,
     colStats,
   };
 }

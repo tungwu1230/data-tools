@@ -1,4 +1,5 @@
 import Papa from "papaparse";
+import { Dataset, columnsFromOutputCols } from "./dataset.js";
 
 let uid = 0;
 export const nextId = () => `id${Date.now()}_${uid++}`;
@@ -75,10 +76,10 @@ export function computeMerge(baseFile, others, outputCols, joinConfig, joinType 
     const out = {};
     outputCols.forEach((oc) => {
       if (oc.fileId === baseFile.id) {
-        out[oc.outputName || oc.column] = baseRow[oc.column] ?? "";
+        out[oc.id] = baseRow[oc.column] ?? "";
       } else {
         const matchedRow = matchedEntries[oc.fileId];
-        out[oc.outputName || oc.column] = matchedRow ? (matchedRow[oc.column] ?? "") : "";
+        out[oc.id] = matchedRow ? (matchedRow[oc.column] ?? "") : "";
       }
     });
     resultRows.push(out);
@@ -94,9 +95,9 @@ export function computeMerge(baseFile, others, outputCols, joinConfig, joinType 
           const out = {};
           outputCols.forEach((oc) => {
             if (oc.fileId === f.id) {
-              out[oc.outputName || oc.column] = otherRow[oc.column] ?? "";
+              out[oc.id] = otherRow[oc.column] ?? "";
             } else {
-              out[oc.outputName || oc.column] = "";
+              out[oc.id] = "";
             }
           });
           resultRows.push(out);
@@ -105,5 +106,6 @@ export function computeMerge(baseFile, others, outputCols, joinConfig, joinType 
     });
   }
 
-  return { rows: resultRows, total: resultRows.length, warnings };
+  const columns = columnsFromOutputCols(outputCols);
+  return new Dataset({ columns, rows: resultRows, warnings });
 }
