@@ -1,5 +1,6 @@
 import { useState } from "react";
 import ConfirmModal from "./ConfirmModal.jsx";
+import { useResizableSidebar } from "../hooks/useResizableSidebar.js";
 import { Plus, Edit2, Trash2 } from "lucide-react";
 
 export default function CollectionsSidebar(props) {
@@ -10,6 +11,14 @@ export default function CollectionsSidebar(props) {
     fromDataChecked, toggleFromDataChecked, fromDataFilterText, setFromDataFilterText,
     editingId, openCreateBlank, openEditCollection, cancelCreate, saveCollection,
   } = props;
+
+  const { width, isResizing, startResizing } = useResizableSidebar({
+    initialWidth: 264,
+    minWidth: 200,
+    maxWidth: 500,
+    direction: "left",
+    storageKey: "wb_left_sidebar_width"
+  });
 
   const [collectionToDelete, setCollectionToDelete] = useState(null);
 
@@ -31,7 +40,12 @@ export default function CollectionsSidebar(props) {
     : [];
 
   return (
-    <div className="wb-sidebar">
+    <div className="wb-sidebar" style={{ width: `${width}px`, position: "sticky" }}>
+      <div
+        className={`resize-handle right-edge ${isResizing ? "is-resizing" : ""}`}
+        onMouseDown={startResizing}
+        title="拖曳調整左側面板寬度"
+      />
       <ConfirmModal
         isOpen={!!collectionToDelete}
         title="確定要刪除此集合？"

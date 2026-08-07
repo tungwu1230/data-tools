@@ -1,4 +1,5 @@
 import { highlightMatch } from "../utils/highlightMatch.jsx";
+import { useResizableSidebar } from "../hooks/useResizableSidebar.js";
 import {
   CheckSquare,
   Square,
@@ -24,6 +25,14 @@ export default function ColumnSelectionSidebar(props) {
     openCreateFromFile,
   } = props;
 
+  const { width, isResizing, startResizing } = useResizableSidebar({
+    initialWidth: 280,
+    minWidth: 220,
+    maxWidth: 600,
+    direction: "right",
+    storageKey: "wb_right_sidebar_width"
+  });
+
   if (!files || files.length === 0) {
     return null;
   }
@@ -35,7 +44,14 @@ export default function ColumnSelectionSidebar(props) {
   const appliedCollection = fm.mode === "collection" ? collections.find((c) => c.id === fm.collectionId) : null;
 
   return (
-    <div className="wb-sidebar-right">
+    <div className="wb-sidebar-right" style={{ width: `${width}px`, position: "sticky" }}>
+      {/* Resizable handle on the left edge of right sidebar */}
+      <div
+        className={`resize-handle left-edge ${isResizing ? "is-resizing" : ""}`}
+        onMouseDown={startResizing}
+        title="拖曳調整右側面板寬度"
+      />
+
       <div className="sidebar-head">
         <h4>欄位選取與管理</h4>
         <span className="collection-count">
@@ -45,7 +61,7 @@ export default function ColumnSelectionSidebar(props) {
 
       {files.length > 1 && (
         <div style={{ marginBottom: 12 }}>
-          <label style={{ fontSize: 11, color: "var(--text-dim)", fontWeight: 700, textTransform: uppercaseText, display: "block", marginBottom: 5 }}>
+          <label style={{ fontSize: 11, color: "var(--text-dim)", fontWeight: 700, textTransform: "uppercase", display: "block", marginBottom: 5 }}>
             當前選取檔案
           </label>
           <div style={{ position: "relative" }}>
@@ -143,5 +159,3 @@ export default function ColumnSelectionSidebar(props) {
     </div>
   );
 }
-
-const uppercaseText = "uppercase";

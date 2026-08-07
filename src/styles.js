@@ -51,6 +51,16 @@ export const CSS = `
   padding: 18px 16px; overflow-y: auto;
   position: sticky; top: 0; height: 100vh; max-height: 100vh; align-self: flex-start;
 }
+.resize-handle {
+  position: absolute; top: 0; bottom: 0; width: 6px;
+  cursor: col-resize; z-index: 50; user-select: none;
+  transition: background 0.15s ease;
+}
+.resize-handle.left-edge { left: -3px; }
+.resize-handle.right-edge { right: -3px; }
+.resize-handle:hover, .resize-handle.is-resizing {
+  background: var(--accent); opacity: 0.7;
+}
 .sidebar-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
 .sidebar-head h4 { margin: 0; font-size: 11px; color: var(--text-dim); font-weight: 700; text-transform: uppercase; letter-spacing: .08em; }
 .empty-mini { font-size: 11.5px; color: var(--text-faint); padding: 8px 0; line-height: 1.65; }
