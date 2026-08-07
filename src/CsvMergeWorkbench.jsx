@@ -32,12 +32,6 @@ export default function CsvMergeWorkbench() {
   const { merged, exporting, exportCsv } = useMerge(step, baseFile, others, outputColumns.outputCols, joinConfig, joinType);
   const sidebar = useCollectionSidebar({ files, collections, createCollection, updateCollection });
 
-  // keep the step-1 checkbox in sync when a column is dropped from the output list in step 3
-  const removeOutputCol = (oc) => {
-    outputColumns.removeOutputCol(oc.id);
-    columnSelection.deselectColumn(oc.fileId, oc.column);
-  };
-
   const canStep2 = files.length > 0 && outputColumns.outputCols.length > 0;
   const canStep3 = canStep2 && (files.length <= 1 || others.every((f) => joinConfig[f.id]?.theirKey && joinConfig[f.id]?.baseKey));
   const canStep4 = canStep3 && outputColumns.outputCols.length > 0;
@@ -121,7 +115,7 @@ export default function CsvMergeWorkbench() {
               selectOutIds={outputColumns.selectOutIds} deselectOutIds={outputColumns.deselectOutIds}
               prefixVal={outputColumns.prefixVal} setPrefixVal={outputColumns.setPrefixVal} suffixVal={outputColumns.suffixVal} setSuffixVal={outputColumns.setSuffixVal}
               applyPrefixSuffix={outputColumns.applyPrefixSuffix} reorderOutputCols={outputColumns.reorderOutputCols} renameOutputCol={outputColumns.renameOutputCol}
-              resetOutputName={outputColumns.resetOutputName} resetSelectedOutputNames={outputColumns.resetSelectedOutputNames} removeOutputCol={removeOutputCol}
+              resetOutputName={outputColumns.resetOutputName} resetSelectedOutputNames={outputColumns.resetSelectedOutputNames}
             />
           )}
           {step === 4 && (

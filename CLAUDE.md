@@ -7,8 +7,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `npm run dev` — start Vite dev server
 - `npm run build` — production build (outputs to `dist/`)
 - `npm run preview` — preview the production build locally
+- `npm test` — run the Vitest test suite once
+- `npm run test:watch` — run Vitest in watch mode
 
-There is no test suite, linter, or type checker configured in this project.
+There is no linter or type checker configured in this project. The test suite (Vitest) covers the pure modules under `src/utils/` (`dataset.js`, `csv.js`, `outputColumns.js`); component/hook behavior is not tested.
 
 ## What this is
 
@@ -16,21 +18,21 @@ A single-page CSV merge tool (`CSV 合併工作台`, UI text is in Traditional C
 
 ## Architecture
 
-The whole app is one component, `CsvMergeWorkbench.jsx`, which is a 4-step wizard (`Step 1: 檔案與欄位` → `Step 2: 合併設定` → `Step 3: 輸出設定` → `Step 4: 預覽與匯出`). All state lives in custom hooks under `src/hooks/`, one hook per concern, and `CsvMergeWorkbench.jsx` just wires their outputs together and passes props down to presentational components in `src/components/`. When changing behavior, find the owning hook first rather than looking in the components.
+The whole app is one component, `CsvMergeWorkbench.jsx`, which is a 5-step wizard (`Step 1: 檔案與欄位` → `Step 2: 合併設定` → `Step 3: 輸出設定` → `Step 4: 預覽與匯出` → `Step 5: 資料品質報告`). All state lives in custom hooks under `src/hooks/`, one hook per concern, and `CsvMergeWorkbench.jsx` just wires their outputs together and passes props down to presentational components in `src/components/`. When changing behavior, find the owning hook first rather than looking in the components.
 
 Hook responsibilities and how they connect (see `src/CsvMergeWorkbench.jsx` for the wiring):
 
 - `useCsvFiles` — owns the uploaded file list and which file is the merge base (`baseFile` vs `others`).
 - `useJoinConfig(files)` — per-non-base-file join key config (`{ theirKey, baseKey }`); prunes entries when a file is removed.
 - `useCollections` — **global, persisted** named column sets ("collections"), saved via `window.storage` (see below), independent of any uploaded file.
-- `useColumnSelection(files, collections)` — per-file column checkboxes plus the prefix-text/collection filter above them. Supports typing `$collection_name$` into the filter box to bulk-select a saved collection's columns (`utils/columns.js`).
-- `useOutputColumns(files, selections)` — derives the ordered output column list from step-1 selections, and owns renaming/reordering/prefix-suffix in step 2. It re-derives from `selections` on change but preserves existing renames/order for columns still selected (matched by `${fileId}::${column}` id).
-- `useMerge(step, baseFile, others, outputCols, joinConfig)` — recomputes the merged preview only when `step === 4`, and drives CSV export (via PapaParse + a Blob download).
+- `useColumnSelection(files, collections)` — per-file column checkboxes plus the prefix-text/collection filter above them. The **single source of truth** for which columns appear in the output. Supports typing `$collection_name$` into the filter box to bulk-select a saved collection's columns (`utils/columns.js`). Prunes state for removed files via the shared `utils/state.js: pruneByKey`.
+- `useOutputColumns(files, selections)` — a **derived view** over `selections`: the output-column list comes straight from the selection (no separate copy). Only renaming/reordering/prefix-suffix live here, as transient overlays (`renameOverlay`, `orderPrefs`) on top of the derivation. Pure derivation lives in `utils/outputColumns.js: buildOutputCols` (the test surface). Reordering survives later selection changes.
+- `useMerge(step, baseFile, others, outputCols, joinConfig)` — recomputes the merged result only when `step >= 4`, and drives CSV export. Returns a `Dataset` value object (see below).
 - `useCollectionSidebar` — local UI-only state for the collections sidebar (list vs. create-new-collection form); calls `useCollections.createCollection` to persist.
 
-Cross-hook sync: when an output column is removed in step 2, `CsvMergeWorkbench.removeOutputCol` calls both `outputColumns.removeOutputCol` and `columnSelection.deselectColumn` so the step-1 checkbox stays in sync — this dual-update pattern is the one place state crosses hook boundaries directly rather than being derived.
+State crosses hook boundaries only by **derivation**, never by hand-wired write-back: `useOutputColumns` reads `selections` one-way, so there is no sync code to maintain.
 
-Merge semantics (`utils/csv.js: computeMerge`): the base file's rows are always the output row set (left join). For each `other` file, its rows are indexed into a `Map` keyed by `theirKey`; duplicate keys keep only the first row and emit a warning. Missing join config for a file leaves its columns blank in the output with a warning, rather than failing.
+Merge semantics (`utils/csv.js: computeMerge`): returns a **`Dataset`** value object (`utils/dataset.js`) — the single seam between the merge engine and its consumers (preview, CSV export, TSV copy, quality report). The dataset owns an ordered `columns` list and `rows` **keyed by stable column id** (`${fileId}::${column}`), never by display label — so two output columns may share a label without overwriting each other (see ADR-0001). Join type is `left` (default), `inner`, or `outer` (full outer). The base file's rows are always the output row set for left/inner; outer additionally appends unmatched rows from other files. For each `other` file, its rows are indexed into a `Map` keyed by `theirKey`; duplicate keys keep only the first row and emit a warning. Missing join config for a file leaves its columns blank in the output with a warning, rather than failing. The dataset also emits a warning when two output columns share a display label.
 
 ### The `window.storage` shim
 

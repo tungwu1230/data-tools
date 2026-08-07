@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { pruneByKey } from "../utils/state.js";
 
 // per-file (non-base) join key configuration; drops stale entries when a file is removed
 export function useJoinConfig(files) {
@@ -7,15 +8,7 @@ export function useJoinConfig(files) {
 
   useEffect(() => {
     const validIds = new Set(files.map((f) => f.id));
-    setJoinConfig((prev) => {
-      let changed = false;
-      const next = {};
-      Object.keys(prev).forEach((fid) => {
-        if (validIds.has(fid)) next[fid] = prev[fid];
-        else changed = true;
-      });
-      return changed ? next : prev;
-    });
+    setJoinConfig((prev) => pruneByKey(prev, validIds));
   }, [files]);
 
   return { joinConfig, setJoinConfig, joinType, setJoinType };

@@ -1,15 +1,6 @@
 import { useState, useEffect } from "react";
 import { parseCollectionSyntax } from "../utils/columns.js";
-
-function pruneByKey(map, validIds) {
-  let changed = false;
-  const next = {};
-  Object.keys(map).forEach((k) => {
-    if (validIds.has(k)) next[k] = map[k];
-    else changed = true;
-  });
-  return changed ? next : map;
-}
+import { pruneByKey } from "../utils/state.js";
 
 // per-file column checkboxes + the prefix/collection filter above them
 export function useColumnSelection(files, collections) {
@@ -43,15 +34,6 @@ export function useColumnSelection(files, collections) {
     setSelections((prev) => {
       const set = new Set(prev[fileId] || []);
       if (set.has(col)) set.delete(col); else set.add(col);
-      return { ...prev, [fileId]: set };
-    });
-  };
-
-  // used when an output column is removed in step 2, to keep the step-1 checkbox in sync
-  const deselectColumn = (fileId, col) => {
-    setSelections((prev) => {
-      const set = new Set(prev[fileId] || []);
-      set.delete(col);
       return { ...prev, [fileId]: set };
     });
   };
@@ -110,7 +92,7 @@ export function useColumnSelection(files, collections) {
   };
 
   return {
-    selections, filterMode, toggleColumn, deselectColumn, visibleHeaders,
+    selections, filterMode, toggleColumn, visibleHeaders,
     updateFilter, clearFilter, selectAllVisible, clearVisible,
   };
 }

@@ -28,6 +28,11 @@ concept is named or sharpened.
   columns may share a label without overwriting each other's data.
 - **Label** — the display name of an output column. Defaults to the original
   column name; user-renamable in step 3. May be non-unique across columns.
+- **Output column list is derived** — the selection is the single source of
+  truth for which columns appear in the output; the list is computed from it by
+  `buildOutputCols`. Reordering and renames are transient overlays
+  (`orderPrefs`, `renameOverlay`) layered on top — they are *not* a second copy
+  of the selection. Reordering survives later selection changes.
 
 ## Selection state
 

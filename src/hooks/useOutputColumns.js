@@ -1,62 +1,57 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { arrayMove } from "@dnd-kit/sortable";
+import { buildOutputCols } from "../utils/outputColumns.js";
 
-// derives the ordered output column list from selections, syncs on change while
-// preserving any renames/reordering already made
+// useOutputColumns is a derived view: the output-column list comes straight
+// from the selection (the single source of truth, owned by useColumnSelection).
+// The only state here is what step 3 layers on top as transient overlays:
+//   orderPrefs    — explicit column ordering (survives selection changes)
+//   renameOverlay — user-chosen output names
+// plus the step-3 bulk-action UI state (selectedOutIds, prefix/suffix).
 export function useOutputColumns(files, selections) {
-  const [outputCols, setOutputCols] = useState([]);
+  const [orderPrefs, setOrderPrefs] = useState([]);
+  const [renameOverlay, setRenameOverlay] = useState({});
   const [selectedOutIds, setSelectedOutIds] = useState(new Set());
   const [prefixVal, setPrefixVal] = useState("");
   const [suffixVal, setSuffixVal] = useState("");
 
-  const selectionSignature = useMemo(
-    () => files.map((f) => f.id + ":" + [...(selections[f.id] || [])].sort().join(",")).join("|"),
-    [files, selections]
+  const outputCols = useMemo(
+    () => buildOutputCols(files, selections, orderPrefs, renameOverlay),
+    [files, selections, orderPrefs, renameOverlay]
   );
 
-  useEffect(() => {
-    setOutputCols((prev) => {
-      const next = [];
-      files.forEach((f) => {
-        const sel = selections[f.id] || new Set();
-        f.headers.forEach((col) => {
-          if (sel.has(col)) {
-            const existing = prev.find((oc) => oc.fileId === f.id && oc.column === col);
-            next.push(existing || { id: `${f.id}::${col}`, fileId: f.id, fileName: f.name, column: col, outputName: col });
-          }
-        });
-      });
-      return next;
-    });
-    // eslint-disable-next-line
-  }, [selectionSignature]);
-
-  const moveOutputCol = (index, dir) => {
-    setOutputCols((prev) => {
-      const next = [...prev];
-      const j = index + dir;
-      if (j < 0 || j >= next.length) return prev;
-      [next[index], next[j]] = [next[j], next[index]];
-      return next;
-    });
-  };
-
+  // Hydrate orderPrefs to the current effective order, then move. After the
+  // first reorder, orderPrefs holds the full list, so new selections append and
+  // deselections are simply filtered out by buildOutputCols.
   const reorderOutputCols = (activeId, overId) => {
-    setOutputCols((prev) => {
-      const oldIndex = prev.findIndex((oc) => oc.id === activeId);
-      const newIndex = prev.findIndex((oc) => oc.id === overId);
+    setOrderPrefs((prev) => {
+      const currentOrder = outputCols.map((oc) => oc.id);
+      const oldIndex = currentOrder.indexOf(activeId);
+      const newIndex = currentOrder.indexOf(overId);
       if (oldIndex === -1 || newIndex === -1 || oldIndex === newIndex) return prev;
-      return arrayMove(prev, oldIndex, newIndex);
+      return arrayMove(currentOrder, oldIndex, newIndex);
     });
   };
 
-  const renameOutputCol = (id, name) => setOutputCols((prev) => prev.map((oc) => (oc.id === id ? { ...oc, outputName: name } : oc)));
-  const resetOutputName = (id) => setOutputCols((prev) => prev.map((oc) => (oc.id === id ? { ...oc, outputName: oc.column } : oc)));
+  const renameOutputCol = (id, name) =>
+    setRenameOverlay((prev) => ({ ...prev, [id]: name }));
+
+  const resetOutputName = (id) =>
+    setRenameOverlay((prev) => {
+      if (!Object.prototype.hasOwnProperty.call(prev, id)) return prev;
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
+
   const resetSelectedOutputNames = () => {
     if (selectedOutIds.size === 0) { alert("請先勾選要還原名稱的欄位。"); return; }
-    setOutputCols((prev) => prev.map((oc) => (selectedOutIds.has(oc.id) ? { ...oc, outputName: oc.column } : oc)));
+    setRenameOverlay((prev) => {
+      const next = { ...prev };
+      selectedOutIds.forEach((id) => delete next[id]);
+      return next;
+    });
   };
-  const removeOutputCol = (id) => setOutputCols((prev) => prev.filter((o) => o.id !== id));
 
   const toggleOutSelect = (id) => setSelectedOutIds((prev) => {
     const set = new Set(prev);
@@ -75,15 +70,23 @@ export function useOutputColumns(files, selections) {
   });
   const selectAllOut = () => setSelectedOutIds(new Set(outputCols.map((o) => o.id)));
   const clearOutSel = () => setSelectedOutIds(new Set());
+
   const applyPrefixSuffix = () => {
     if (selectedOutIds.size === 0) { alert("請先勾選要套用前後綴的欄位。"); return; }
-    setOutputCols((prev) => prev.map((oc) => (selectedOutIds.has(oc.id) ? { ...oc, outputName: `${prefixVal}${oc.outputName}${suffixVal}` } : oc)));
+    setRenameOverlay((prev) => {
+      const next = { ...prev };
+      outputCols.forEach((oc) => {
+        if (selectedOutIds.has(oc.id)) {
+          next[oc.id] = `${prefixVal}${oc.outputName}${suffixVal}`;
+        }
+      });
+      return next;
+    });
   };
 
   return {
     outputCols, selectedOutIds, prefixVal, setPrefixVal, suffixVal, setSuffixVal,
     toggleOutSelect, selectAllOut, clearOutSel, selectOutIds, deselectOutIds, applyPrefixSuffix,
-    moveOutputCol, reorderOutputCols, renameOutputCol, resetOutputName, resetSelectedOutputNames, removeOutputCol,
+    reorderOutputCols, renameOutputCol, resetOutputName, resetSelectedOutputNames,
   };
 }
-
