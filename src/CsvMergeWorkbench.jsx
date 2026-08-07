@@ -106,8 +106,10 @@ export default function CsvMergeWorkbench() {
           )}
           {step === 3 && (
             <StepOutput
+              files={files} collections={collections}
               outputCols={outputColumns.outputCols} selectedOutIds={outputColumns.selectedOutIds} toggleOutSelect={outputColumns.toggleOutSelect}
               selectAllOut={outputColumns.selectAllOut} clearOutSel={outputColumns.clearOutSel}
+              selectOutIds={outputColumns.selectOutIds} deselectOutIds={outputColumns.deselectOutIds}
               prefixVal={outputColumns.prefixVal} setPrefixVal={outputColumns.setPrefixVal} suffixVal={outputColumns.suffixVal} setSuffixVal={outputColumns.setSuffixVal}
               applyPrefixSuffix={outputColumns.applyPrefixSuffix} moveOutputCol={outputColumns.moveOutputCol} renameOutputCol={outputColumns.renameOutputCol}
               resetOutputName={outputColumns.resetOutputName} resetSelectedOutputNames={outputColumns.resetSelectedOutputNames} removeOutputCol={removeOutputCol}

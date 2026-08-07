@@ -374,9 +374,24 @@ select:focus, .merge-select:focus {
   box-shadow: 0 0 0 3px var(--accent-dim);
 }
 
-.out-toolbar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; padding: 13px 14px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface-alt); }
+.out-toolbar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; padding: 13px 14px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface-alt); }
 .out-toolbar input[type=text] { width: 90px; background: var(--surface); border: 1px solid var(--border); border-radius: 7px; color: var(--text); font-family: var(--mono); font-size: 12px; padding: 6px 9px; }
 .out-toolbar .divider { width: 1px; align-self: stretch; background: var(--border); margin: 0 2px; }
+
+.out-filter-bar {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  margin-bottom: 16px; padding: 10px 14px;
+  border: 1px solid var(--border); border-radius: 12px; background: var(--surface);
+}
+.filter-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-dim); }
+.filter-item label { font-weight: 600; white-space: nowrap; font-size: 11.5px; }
+.filter-item select, .filter-item.search-item input {
+  background: var(--surface-alt); border: 1px solid var(--border); border-radius: 7px;
+  color: var(--text); font-size: 11.5px; padding: 5px 8px; font-family: var(--sans);
+}
+.filter-item select:focus, .filter-item.search-item input:focus {
+  outline: none; border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-dim);
+}
 
 .out-table { width: 100%; border-collapse: collapse; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
 .out-table th { text-align: left; font-size: 10.5px; text-transform: uppercase; letter-spacing: .05em; color: var(--text-faint); font-weight: 700; padding: 8px 10px; border-bottom: 1px solid var(--border); background: var(--surface-alt); }

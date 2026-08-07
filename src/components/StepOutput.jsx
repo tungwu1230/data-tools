@@ -1,19 +1,59 @@
-import { ChevronUp, ChevronDown, RotateCcw } from "lucide-react";
+import { useState } from "react";
+import { ChevronUp, ChevronDown, RotateCcw, Filter, Bookmark, Search, X } from "lucide-react";
 
 export default function StepOutput(props) {
   const {
+    files, collections,
     outputCols, selectedOutIds, toggleOutSelect, selectAllOut, clearOutSel,
+    selectOutIds, deselectOutIds,
     prefixVal, setPrefixVal, suffixVal, setSuffixVal, applyPrefixSuffix,
     moveOutputCol, renameOutputCol, resetOutputName, resetSelectedOutputNames,
   } = props;
 
-  const allSelected = outputCols.length > 0 && selectedOutIds.size === outputCols.length;
+  const [fileFilter, setFileFilter] = useState("all");
+  const [collectionFilter, setCollectionFilter] = useState("all");
+  const [searchText, setSearchText] = useState("");
+
+  const displayCols = outputCols.filter((oc) => {
+    if (fileFilter !== "all" && oc.fileId !== fileFilter) return false;
+    if (collectionFilter !== "all") {
+      const coll = collections?.find((c) => c.id === collectionFilter);
+      if (coll && !coll.columns.includes(oc.column)) return false;
+    }
+    if (searchText.trim()) {
+      const q = searchText.trim().toLowerCase();
+      const matchCol = oc.column.toLowerCase().includes(q);
+      const matchFile = oc.fileName.toLowerCase().includes(q);
+      const matchOut = oc.outputName.toLowerCase().includes(q);
+      if (!matchCol && !matchFile && !matchOut) return false;
+    }
+    return true;
+  });
+
+  const isFiltered = fileFilter !== "all" || collectionFilter !== "all" || searchText.trim() !== "";
+  const allDisplayedSelected = displayCols.length > 0 && displayCols.every((oc) => selectedOutIds.has(oc.id));
+  const displayedSelectedCount = displayCols.filter((oc) => selectedOutIds.has(oc.id)).length;
+
+  const handleHeaderCheckboxChange = (e) => {
+    const ids = displayCols.map((oc) => oc.id);
+    if (e.target.checked) {
+      selectOutIds(ids);
+    } else {
+      deselectOutIds(ids);
+    }
+  };
+
+  const resetFilters = () => {
+    setFileFilter("all");
+    setCollectionFilter("all");
+    setSearchText("");
+  };
 
   return (
     <div>
       <div className="out-toolbar">
-        <button className="btn xs" onClick={selectAllOut}>全選</button>
-        <button className="btn ghost xs" onClick={clearOutSel}>清除勾選</button>
+        <button className="btn xs" onClick={selectAllOut}>全選全部 ({outputCols.length})</button>
+        <button className="btn ghost xs" onClick={clearOutSel}>清除全選</button>
         <button
           className="btn ghost xs"
           style={{ display: "inline-flex", alignItems: "center", gap: 4 }}
@@ -35,14 +75,70 @@ export default function StepOutput(props) {
         </span>
       </div>
 
+      <div className="out-filter-bar">
+        <div className="filter-item">
+          <Filter size={13} color="var(--accent)" />
+          <label>從來源過濾：</label>
+          <select value={fileFilter} onChange={(e) => setFileFilter(e.target.value)}>
+            <option value="all">全部來源檔案 ({files?.length || 0})</option>
+            {files?.map((f) => (
+              <option key={f.id} value={f.id}>{f.name}</option>
+            ))}
+          </select>
+        </div>
+
+        <div className="filter-item">
+          <Bookmark size={13} color="var(--accent)" />
+          <label>從集合過濾：</label>
+          <select value={collectionFilter} onChange={(e) => setCollectionFilter(e.target.value)}>
+            <option value="all">全部集合 ({collections?.length || 0})</option>
+            {collections?.map((c) => (
+              <option key={c.id} value={c.id}>{c.name} ({c.columns.length} 欄)</option>
+            ))}
+          </select>
+        </div>
+
+        <div className="filter-item search-item" style={{ flex: 1, minWidth: 160 }}>
+          <Search size={13} color="var(--text-faint)" />
+          <input
+            type="text"
+            placeholder="搜尋來源 / 原始 / 輸出欄位…"
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+            style={{ width: "100%" }}
+          />
+        </div>
+
+        {isFiltered && (
+          <button className="btn ghost xs" onClick={resetFilters} style={{ display: "inline-flex", alignItems: "center", gap: 3 }}>
+            <X size={12} />
+            <span>清除篩選</span>
+          </button>
+        )}
+
+        <div style={{ display: "flex", gap: 8, width: "100%", paddingTop: 8, borderTop: "1px dashed var(--border-soft)", marginTop: 2, alignItems: "center" }}>
+          <span style={{ fontSize: 11.5, color: "var(--text-dim)" }}>
+            顯示結果：共 {displayCols.length} 欄（已勾選 {displayedSelectedCount} 欄）
+          </span>
+          <span style={{ flex: 1 }} />
+          <button className="btn xs" onClick={() => selectOutIds(displayCols.map((c) => c.id))} disabled={displayCols.length === 0}>
+            勾選顯示的欄位
+          </button>
+          <button className="btn ghost xs" onClick={() => deselectOutIds(displayCols.map((c) => c.id))} disabled={displayCols.length === 0}>
+            取消勾選顯示的欄位
+          </button>
+        </div>
+      </div>
+
       <table className="out-table">
         <thead>
           <tr>
             <th style={{ width: 32, textAlign: "center" }}>
               <input
                 type="checkbox"
-                checked={allSelected}
-                onChange={(e) => (e.target.checked ? selectAllOut() : clearOutSel())}
+                checked={allDisplayedSelected}
+                onChange={handleHeaderCheckboxChange}
+                disabled={displayCols.length === 0}
               />
             </th>
             <th style={{ width: 60, textAlign: "center" }}>順序</th>
@@ -53,42 +149,48 @@ export default function StepOutput(props) {
           </tr>
         </thead>
         <tbody>
-          {outputCols.map((oc, i) => (
-            <tr key={oc.id}>
-              <td style={{ textAlign: "center" }}>
-                <input type="checkbox" checked={selectedOutIds.has(oc.id)} onChange={() => toggleOutSelect(oc.id)} />
-              </td>
-              <td style={{ textAlign: "center" }}>
-                <div className="move-btns" style={{ justifyContent: "center" }}>
-                  <button disabled={i === 0} onClick={() => moveOutputCol(i, -1)}>
-                    <ChevronUp size={12} />
+          {displayCols.map((oc) => {
+            const rawIndex = outputCols.findIndex((o) => o.id === oc.id);
+            return (
+              <tr key={oc.id}>
+                <td style={{ textAlign: "center" }}>
+                  <input type="checkbox" checked={selectedOutIds.has(oc.id)} onChange={() => toggleOutSelect(oc.id)} />
+                </td>
+                <td style={{ textAlign: "center" }}>
+                  <div className="move-btns" style={{ justifyContent: "center" }}>
+                    <button disabled={rawIndex <= 0} onClick={() => moveOutputCol(rawIndex, -1)}>
+                      <ChevronUp size={12} />
+                    </button>
+                    <button disabled={rawIndex >= outputCols.length - 1} onClick={() => moveOutputCol(rawIndex, 1)}>
+                      <ChevronDown size={12} />
+                    </button>
+                  </div>
+                </td>
+                <td className="out-src-file">{oc.fileName}</td>
+                <td className="out-src-col">{oc.column}</td>
+                <td>
+                  <input className="out-name-input" value={oc.outputName} onChange={(e) => renameOutputCol(oc.id, e.target.value)} />
+                </td>
+                <td style={{ textAlign: "center" }}>
+                  <button
+                    className="btn ghost xs"
+                    title="還原成原始欄位名稱"
+                    style={{ display: "inline-flex", alignItems: "center", gap: 3 }}
+                    onClick={() => resetOutputName(oc.id)}
+                  >
+                    <RotateCcw size={11} />
+                    <span>還原</span>
                   </button>
-                  <button disabled={i === outputCols.length - 1} onClick={() => moveOutputCol(i, 1)}>
-                    <ChevronDown size={12} />
-                  </button>
-                </div>
-              </td>
-              <td className="out-src-file">{oc.fileName}</td>
-              <td className="out-src-col">{oc.column}</td>
-              <td>
-                <input className="out-name-input" value={oc.outputName} onChange={(e) => renameOutputCol(oc.id, e.target.value)} />
-              </td>
-              <td style={{ textAlign: "center" }}>
-                <button
-                  className="btn ghost xs"
-                  title="還原成原始欄位名稱"
-                  style={{ display: "inline-flex", alignItems: "center", gap: 3 }}
-                  onClick={() => resetOutputName(oc.id)}
-                >
-                  <RotateCcw size={11} />
-                  <span>還原</span>
-                </button>
-              </td>
-            </tr>
-          ))}
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
       {outputCols.length === 0 && <div className="empty">還沒有選取任何欄位，回上一步挑選要輸出的欄位。</div>}
+      {outputCols.length > 0 && displayCols.length === 0 && (
+        <div className="empty">沒有符合當前篩選條件的欄位。<br /><button className="btn ghost xs" onClick={resetFilters} style={{ marginTop: 8 }}>清除篩選條件</button></div>
+      )}
     </div>
   );
 }

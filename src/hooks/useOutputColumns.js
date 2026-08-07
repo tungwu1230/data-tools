@@ -52,6 +52,16 @@ export function useOutputColumns(files, selections) {
     if (set.has(id)) set.delete(id); else set.add(id);
     return set;
   });
+  const selectOutIds = (ids) => setSelectedOutIds((prev) => {
+    const next = new Set(prev);
+    ids.forEach((id) => next.add(id));
+    return next;
+  });
+  const deselectOutIds = (ids) => setSelectedOutIds((prev) => {
+    const next = new Set(prev);
+    ids.forEach((id) => next.delete(id));
+    return next;
+  });
   const selectAllOut = () => setSelectedOutIds(new Set(outputCols.map((o) => o.id)));
   const clearOutSel = () => setSelectedOutIds(new Set());
   const applyPrefixSuffix = () => {
@@ -61,7 +71,7 @@ export function useOutputColumns(files, selections) {
 
   return {
     outputCols, selectedOutIds, prefixVal, setPrefixVal, suffixVal, setSuffixVal,
-    toggleOutSelect, selectAllOut, clearOutSel, applyPrefixSuffix,
+    toggleOutSelect, selectAllOut, clearOutSel, selectOutIds, deselectOutIds, applyPrefixSuffix,
     moveOutputCol, renameOutputCol, resetOutputName, resetSelectedOutputNames, removeOutputCol,
   };
 }
