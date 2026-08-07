@@ -39,5 +39,9 @@ export function useCollections() {
     persistCollections(collections.filter((c) => c.id !== id));
   }, [collections, persistCollections]);
 
-  return { collections, collectionsLoaded, createCollection, deleteCollection };
+  const updateCollection = useCallback((id, name, columns) => {
+    persistCollections(collections.map((c) => (c.id === id ? { ...c, name, columns } : c)));
+  }, [collections, persistCollections]);
+
+  return { collections, collectionsLoaded, createCollection, deleteCollection, updateCollection };
 }

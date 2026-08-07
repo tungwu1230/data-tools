@@ -20,11 +20,11 @@ export default function CsvMergeWorkbench() {
 
   const { files, loadingFiles, fileInputRef, handleUpload, removeFile, baseFileId, setBaseFileId, baseFile, others } = useCsvFiles();
   const { joinConfig, setJoinConfig } = useJoinConfig(files);
-  const { collections, collectionsLoaded, createCollection, deleteCollection } = useCollections();
+  const { collections, collectionsLoaded, createCollection, deleteCollection, updateCollection } = useCollections();
   const columnSelection = useColumnSelection(files, collections);
   const outputColumns = useOutputColumns(files, columnSelection.selections);
   const { merged, exporting, exportCsv } = useMerge(step, baseFile, others, outputColumns.outputCols, joinConfig);
-  const sidebar = useCollectionSidebar({ files, collections, createCollection });
+  const sidebar = useCollectionSidebar({ files, collections, createCollection, updateCollection });
 
   // keep the step-1 checkbox in sync when a column is dropped from the output list in step 2
   const removeOutputCol = (oc) => {
@@ -57,7 +57,9 @@ export default function CsvMergeWorkbench() {
         toggleFromDataChecked={sidebar.toggleFromDataChecked}
         fromDataFilterText={sidebar.fromDataFilterText}
         setFromDataFilterText={sidebar.setFromDataFilterText}
+        editingId={sidebar.editingId}
         openCreateBlank={sidebar.openCreateBlank}
+        openEditCollection={sidebar.openEditCollection}
         cancelCreate={sidebar.cancelCreate}
         saveCollection={sidebar.saveCollection}
       />

@@ -4,7 +4,7 @@ export default function CollectionsSidebar(props) {
     sidebarMode, createMode, setCreateMode, createName, setCreateName,
     manualText, setManualText, fromDataFileId, setFromDataFileId,
     fromDataChecked, toggleFromDataChecked, fromDataFilterText, setFromDataFilterText,
-    openCreateBlank, cancelCreate, saveCollection,
+    editingId, openCreateBlank, openEditCollection, cancelCreate, saveCollection,
   } = props;
 
   const fromDataFile = files.find((f) => f.id === fromDataFileId) || null;
@@ -35,7 +35,10 @@ export default function CollectionsSidebar(props) {
                 <span className="collection-count">{c.columns.length} 欄</span>
               </div>
               <div className="collection-row-cols">{c.columns.slice(0, 8).join(", ")}{c.columns.length > 8 ? "…" : ""}</div>
-              <button className="btn ghost xs" onClick={() => deleteCollection(c.id)}>刪除</button>
+              <div style={{ display: "flex", gap: 6 }}>
+                <button className="btn ghost xs" onClick={() => openEditCollection(c)}>編輯</button>
+                <button className="btn ghost xs" onClick={() => deleteCollection(c.id)}>刪除</button>
+              </div>
             </div>
           ))}
         </div>
@@ -43,6 +46,7 @@ export default function CollectionsSidebar(props) {
 
       {sidebarMode === "create" && (
         <div className="collection-create">
+          <div className="edit-form-title">{editingId ? "編輯集合" : "新增集合"}</div>
           <div className="mode-toggle">
             <button className={createMode === "manual" ? "active" : ""} onClick={() => setCreateMode("manual")}>手動輸入</button>
             <button
@@ -87,8 +91,16 @@ export default function CollectionsSidebar(props) {
           )}
 
           <div className="create-actions">
+            {editingId && (
+              <button
+                className="btn ghost xs edit-delete"
+                onClick={() => { deleteCollection(editingId); cancelCreate(); }}
+              >
+                刪除這個集合
+              </button>
+            )}
             <button className="btn ghost xs" onClick={cancelCreate}>取消</button>
-            <button className="btn primary xs" onClick={saveCollection}>儲存集合</button>
+            <button className="btn primary xs" onClick={saveCollection}>{editingId ? "儲存變更" : "儲存集合"}</button>
           </div>
         </div>
       )}
