@@ -38,8 +38,12 @@ concept is named or sharpened.
 
 - **Selection** — which columns are checked for a given file. The single source
   of truth for "what goes into the output."
-- **Collection** — a persisted, named set of column names (`window.storage`),
-  used to bulk-select matching columns via the `$name$` filter syntax.
+- **Collection** — a persisted, named set of column names, saved through an
+  injected **storage adapter** (threaded from `main.jsx`), used to bulk-select
+  matching columns via the `$name$` filter syntax. The async load/persist logic
+  lives in `collectionsStore.js`; `useCollections` is a thin React wrapper.
+  `main.jsx` prefers the host environment's `window.storage`, falling back to
+  a localStorage-backed adapter in a plain browser.
 
 ## Notes for explorers
 

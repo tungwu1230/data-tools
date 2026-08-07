@@ -1,35 +1,31 @@
-// @ts-nocheck -- plain JS project; window.storage is a runtime shim, not a real DOM type
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { nextId } from "../utils/ids.js";
+import { createCollectionsStore } from "../utils/collectionsStore.js";
 
-const STORAGE_KEY = "csv-merge-collections";
-
-// global, persisted named column sets ("collections")
-export function useCollections() {
+// global, persisted named column sets ("collections"). The storage adapter is
+// injected (threaded from main.jsx) so the hook is testable through its
+// interface; the async load/persist logic itself lives in collectionsStore.js.
+export function useCollections(storage) {
   const [collections, setCollections] = useState([]);
   const [collectionsLoaded, setCollectionsLoaded] = useState(false);
+  const store = useMemo(() => createCollectionsStore(storage), [storage]);
 
   useEffect(() => {
+    let cancelled = false;
     (async () => {
-      try {
-        const res = await window.storage.get(STORAGE_KEY, false);
-        if (res && res.value) setCollections(JSON.parse(res.value));
-      } catch (e) {
-        // no saved sets yet
-      } finally {
+      const loaded = await store.load();
+      if (!cancelled) {
+        setCollections(loaded);
         setCollectionsLoaded(true);
       }
     })();
-  }, []);
+    return () => { cancelled = true; };
+  }, [store]);
 
   const persistCollections = useCallback(async (next) => {
     setCollections(next);
-    try {
-      await window.storage.set(STORAGE_KEY, JSON.stringify(next), false);
-    } catch (e) {
-      console.error("儲存集合失敗", e);
-    }
-  }, []);
+    await store.save(next);
+  }, [store]);
 
   const createCollection = useCallback((name, columns) => {
     persistCollections([...collections, { id: nextId(), name, columns }]);

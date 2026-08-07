@@ -18,7 +18,7 @@ import { ArrowLeft, ArrowRight } from "lucide-react";
 
 import StepDataQuality from "./components/StepDataQuality.jsx";
 
-export default function CsvMergeWorkbench() {
+export default function CsvMergeWorkbench({ storage }) {
   const [step, setStep] = useState(1);
   const [collapsed, setCollapsed] = useState({});
   const [previewOpen, setPreviewOpen] = useState({});
@@ -26,7 +26,7 @@ export default function CsvMergeWorkbench() {
 
   const { files, loadingFiles, fileInputRef, handleUpload, removeFile, baseFileId, setBaseFileId, baseFile, others } = useCsvFiles();
   const { joinConfig, setJoinConfig, joinType, setJoinType } = useJoinConfig(files);
-  const { collections, collectionsLoaded, createCollection, deleteCollection, updateCollection } = useCollections();
+  const { collections, collectionsLoaded, createCollection, deleteCollection, updateCollection } = useCollections(storage);
   const columnSelection = useColumnSelection(files, collections);
   const outputColumns = useOutputColumns(files, columnSelection.selections);
   const { merged, exporting, exportCsv } = useMerge(step, baseFile, others, outputColumns.outputCols, joinConfig, joinType);
