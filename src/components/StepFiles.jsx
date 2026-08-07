@@ -1,11 +1,13 @@
 import { useState, useEffect } from "react";
 import ConfirmModal from "./ConfirmModal.jsx";
+import UploadModal from "./UploadModal.jsx";
 import {
   Upload,
   Trash2,
   FileSpreadsheet,
   Check,
-  Star
+  Star,
+  Plus
 } from "lucide-react";
 
 function getColLetter(index) {
@@ -27,6 +29,7 @@ export default function StepFiles(props) {
   } = props;
 
   const [fileToDelete, setFileToDelete] = useState(null);
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
 
   // Sync activeFileId when files change
   useEffect(() => {
@@ -48,7 +51,7 @@ export default function StepFiles(props) {
 
   if (files.length === 0) {
     return (
-      <div>
+      <div style={{ padding: 24 }}>
         <ConfirmModal
           isOpen={!!fileToDelete}
           title="確定要移除此檔案？"
@@ -59,25 +62,36 @@ export default function StepFiles(props) {
           onCancel={() => setFileToDelete(null)}
         />
 
-        <div className="dropzone" style={{ flexDirection: "column", padding: "48px 24px", textAlign: "center", gap: 16 }}>
+        <UploadModal
+          isOpen={isUploadModalOpen}
+          onClose={() => setIsUploadModalOpen(false)}
+          fileInputRef={fileInputRef}
+          handleUpload={handleUpload}
+          loadingFiles={loadingFiles}
+        />
+
+        <div className="dropzone" style={{ flexDirection: "column", padding: "60px 24px", textAlign: "center", gap: 16 }}>
           <div style={{ display: "flex", justifyContent: "center" }}>
-            <div style={{ width: 56, height: 56, borderRadius: "50%", background: "var(--accent-dim)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--accent)" }}>
-              <FileSpreadsheet size={28} />
+            <div style={{ width: 64, height: 64, borderRadius: "50%", background: "var(--accent-dim)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--accent)" }}>
+              <FileSpreadsheet size={32} />
             </div>
           </div>
           <div>
-            <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 6, color: "var(--text)" }}>
-              上傳 CSV 檔案
+            <div style={{ fontSize: 17, fontWeight: 700, marginBottom: 6, color: "var(--text)" }}>
+              還沒有上傳任何 CSV 試算表
             </div>
-            <div className="dropzone-text" style={{ fontSize: 13, maxWidth: 420, margin: "0 auto" }}>
-              可一次選取多份 CSV 檔案。主要畫面將以試算表 (Sheet) 形式直觀瀏覽資料，並可於右側側邊欄快選欄位。
+            <div className="dropzone-text" style={{ fontSize: 13, maxWidth: 460, margin: "0 auto" }}>
+              上傳一或多份 CSV 檔案，主要畫面將以完整試算表形式展示，並可於右側側邊欄進行欄位比對與勾選。
             </div>
           </div>
-          <label className="btn primary" style={{ cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 8, padding: "9px 20px", fontSize: 13 }}>
+          <button
+            className="btn primary"
+            style={{ cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 8, padding: "10px 24px", fontSize: 13 }}
+            onClick={() => setIsUploadModalOpen(true)}
+          >
             <Upload size={16} />
-            <span>{loadingFiles ? "讀取中…" : "選擇 CSV 檔案"}</span>
-            <input ref={fileInputRef} type="file" accept=".csv" multiple onChange={handleUpload} />
-          </label>
+            <span>選擇或拖拉上傳 CSV 檔案</span>
+          </button>
         </div>
       </div>
     );
@@ -97,50 +111,58 @@ export default function StepFiles(props) {
         onCancel={() => setFileToDelete(null)}
       />
 
-      {/* Top action bar with Add files & Tabs */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
-        {/* Tabs for files */}
-        <div className="file-tabs-bar" style={{ flex: 1, minWidth: 0 }}>
-          {files.map((file) => {
-            const isSelected = file.id === activeFileId;
-            const selCount = (selections[file.id] || new Set()).size;
-            const isBase = file.id === baseFileId;
-            return (
-              <div
-                key={file.id}
-                className={`file-tab ${isSelected ? "active" : ""}`}
-                onClick={() => setActiveFileId(file.id)}
-              >
-                <FileSpreadsheet size={14} color={isSelected ? "var(--accent)" : "var(--text-faint)"} />
-                <span className="file-tab-title">{file.name}</span>
-                {isBase && files.length > 1 && (
-                  <span className="badge" style={{ fontSize: 9, padding: "1px 5px" }}>主檔</span>
-                )}
-                <span className="sel-count" style={{ fontSize: 9.5, padding: "1px 6px" }}>
-                  {selCount > 0 ? `已選 ${selCount}` : `${file.headers.length} 欄`}
-                </span>
-                <button
-                  className="btn ghost xs"
-                  style={{ padding: "1px 3px", border: "none", color: "var(--text-faint)", marginLeft: 2 }}
-                  title="移除檔案"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setFileToDelete(file);
-                  }}
-                >
-                  <Trash2 size={12} />
-                </button>
-              </div>
-            );
-          })}
-        </div>
+      <UploadModal
+        isOpen={isUploadModalOpen}
+        onClose={() => setIsUploadModalOpen(false)}
+        fileInputRef={fileInputRef}
+        handleUpload={handleUpload}
+        loadingFiles={loadingFiles}
+      />
 
-        {/* Upload more button */}
-        <label className="btn ghost xs" style={{ cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 5, shrink: 0 }}>
-          <Upload size={13} />
-          <span>{loadingFiles ? "讀取中…" : "+ 新增 CSV"}</span>
-          <input ref={fileInputRef} type="file" accept=".csv" multiple onChange={handleUpload} />
-        </label>
+      {/* Tabs bar for uploaded files + Add Spreadsheet Button */}
+      <div className="file-tabs-bar">
+        {files.map((file) => {
+          const isSelected = file.id === activeFileId;
+          const selCount = (selections[file.id] || new Set()).size;
+          const isBase = file.id === baseFileId;
+          return (
+            <div
+              key={file.id}
+              className={`file-tab ${isSelected ? "active" : ""}`}
+              onClick={() => setActiveFileId(file.id)}
+            >
+              <FileSpreadsheet size={14} color={isSelected ? "var(--accent)" : "var(--text-faint)"} />
+              <span className="file-tab-title">{file.name}</span>
+              {isBase && files.length > 1 && (
+                <span className="badge" style={{ fontSize: 9, padding: "1px 5px" }}>主檔</span>
+              )}
+              <span className="sel-count" style={{ fontSize: 9.5, padding: "1px 6px" }}>
+                {selCount > 0 ? `已選 ${selCount}` : `${file.headers.length} 欄`}
+              </span>
+              <button
+                className="btn ghost xs"
+                style={{ padding: "1px 3px", border: "none", color: "var(--text-faint)", marginLeft: 2 }}
+                title="移除檔案"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setFileToDelete(file);
+                }}
+              >
+                <Trash2 size={12} />
+              </button>
+            </div>
+          );
+        })}
+
+        {/* Add Spreadsheet Button next to tabs */}
+        <button
+          className="add-tab-btn"
+          onClick={() => setIsUploadModalOpen(true)}
+          title="點擊開啟選擇檔案或拖拉上傳視窗"
+        >
+          <Plus size={13} />
+          <span>新增試算表</span>
+        </button>
       </div>
 
       {/* Main Sheet View */}
@@ -181,7 +203,7 @@ export default function StepFiles(props) {
             </div>
 
             {/* Sheet Table View */}
-            <div className="sheet-table-wrap" style={{ maxHeight: "calc(100vh - 240px)" }}>
+            <div className="sheet-table-wrap">
               <table className="sheet-table">
                 <thead>
                   <tr>
@@ -210,7 +232,7 @@ export default function StepFiles(props) {
                   </tr>
                 </thead>
                 <tbody>
-                  {activeFile.rows.slice(0, 50).map((row, rIdx) => (
+                  {activeFile.rows.slice(0, 100).map((row, rIdx) => (
                     <tr key={rIdx} className="sheet-row">
                       <td className="sheet-row-num">{rIdx + 1}</td>
                       {activeFile.headers.map((h) => {

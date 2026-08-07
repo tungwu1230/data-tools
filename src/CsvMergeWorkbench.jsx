@@ -78,8 +78,6 @@ export default function CsvMergeWorkbench() {
 
       <div className="wb-main">
         <div className="wb-head">
-          <p className="wb-title">CSV 合併工作台</p>
-          <p className="wb-sub">上傳 CSV → 挑選欄位 → 合併設定 → 輸出設定 → 匯出合併結果</p>
           <div className="wb-steps">
             <StepTab n={1} label="檔案與欄位" active={step === 1} done={step > 1} onClick={() => setStep(1)} />
             <StepTab n={2} label="合併設定" active={step === 2} done={step > 2} onClick={() => canStep2 && setStep(2)} disabled={!canStep2} />
@@ -88,7 +86,7 @@ export default function CsvMergeWorkbench() {
           </div>
         </div>
 
-        <div className="wb-body">
+        <div className={`wb-body ${step === 1 ? "flush" : "padded"}`}>
           {step === 1 && (
             <StepFiles
               files={files} loadingFiles={loadingFiles} fileInputRef={fileInputRef} handleUpload={handleUpload} removeFile={removeFile}

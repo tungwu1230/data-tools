@@ -95,7 +95,7 @@ export const CSS = `
 
 .wb-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .wb-head {
-  padding: 22px 28px 0 28px;
+  padding: 12px 16px 0 16px;
   background: var(--surface);
   border-bottom: 1px solid var(--border);
 }
@@ -120,12 +120,9 @@ export const CSS = `
 .wb-step-btn.active .num { background: var(--accent); border-color: var(--accent); color: #fff; }
 .wb-step-btn.done .num { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
 .wb-step-btn:disabled { cursor: not-allowed; opacity: .5; }
-.wb-body { flex: 1; padding: 24px 28px 10px 28px; overflow-y: auto;
-  background:
-    linear-gradient(var(--bg-canvas-line) 1px, transparent 1px) 0 0/100% 28px,
-    linear-gradient(90deg, var(--bg-canvas-line) 1px, transparent 1px) 0 0/28px 100%,
-    var(--bg-canvas);
-}
+.wb-body { flex: 1; overflow-y: auto; background: var(--bg-canvas); }
+.wb-body.flush { padding: 0; }
+.wb-body.padded { padding: 20px 24px; }
 .wb-foot {
   display: flex; justify-content: space-between; align-items: center;
   padding: 15px 28px; border-top: 1px solid var(--border); background: var(--surface);
@@ -491,38 +488,39 @@ select:focus, .merge-select:focus {
 }
 
 /* ---------------------------------------------------------------
-   Sheet View & Right Selection Panel Layout
+   Sheet View & Right Selection Panel Layout (Flush Border-to-Border)
 ----------------------------------------------------------------*/
 .step-files-container {
-  display: flex; flex-direction: column; gap: 16px;
+  display: flex; flex-direction: column; gap: 0; height: 100%; min-height: 0;
 }
 
 .step-files-layout {
-  display: flex; gap: 20px; align-items: flex-start;
+  display: flex; gap: 0; align-items: stretch; flex: 1; min-height: 0;
 }
 
 .sheet-main-view {
-  flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 14px;
+  flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0; height: 100%;
 }
 
 .sheet-right-panel {
   width: 320px; flex-shrink: 0; background: var(--surface);
-  border: 1px solid var(--border); border-radius: 12px;
+  border: 1px solid var(--border); border-radius: 0;
   padding: 16px; display: flex; flex-direction: column; gap: 12px;
-  position: sticky; top: 12px; max-height: calc(100vh - 180px); overflow-y: auto;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+  position: sticky; top: 0; height: calc(100vh - 110px); max-height: calc(100vh - 110px); overflow-y: auto;
+  box-shadow: none;
 }
 
 .file-tabs-bar {
-  display: flex; align-items: center; gap: 8px; overflow-x: auto;
-  padding-bottom: 2px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 6px; overflow-x: auto;
+  padding: 8px 16px 0 16px; background: var(--surface-alt);
+  border-bottom: 1px solid var(--border);
 }
 
 .file-tab {
   display: inline-flex; align-items: center; gap: 8px;
   padding: 8px 14px; border-radius: 8px 8px 0 0;
   border: 1px solid var(--border); border-bottom: none;
-  background: var(--surface-alt); color: var(--text-dim);
+  background: var(--surface); color: var(--text-dim);
   font-family: var(--mono); font-size: 12px; cursor: pointer;
   transition: all .15s ease; position: relative; top: 1px;
   white-space: nowrap; user-select: none;
@@ -535,12 +533,25 @@ select:focus, .merge-select:focus {
   box-shadow: 0 -2px 0 0 var(--accent) inset;
 }
 
+.add-tab-btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 7px 12px; border-radius: 7px 7px 0 0;
+  border: 1px dashed var(--accent); border-bottom: none;
+  background: var(--accent-dim); color: var(--accent-strong);
+  font-family: var(--sans); font-size: 12px; font-weight: 600;
+  cursor: pointer; transition: all .15s ease; position: relative; top: 1px;
+  white-space: nowrap;
+}
+.add-tab-btn:hover {
+  background: #d4e4f2; border-color: var(--accent-strong); color: var(--accent-strong);
+}
+
 .file-tab-title { display: flex; align-items: center; gap: 6px; }
 
 .sheet-card {
-  border: 1px solid var(--border); border-radius: 12px;
+  border: none; border-radius: 0;
   background: var(--surface); overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+  box-shadow: none; flex: 1; display: flex; flex-direction: column;
 }
 
 .sheet-card-head {
@@ -554,7 +565,8 @@ select:focus, .merge-select:focus {
 }
 
 .sheet-table-wrap {
-  overflow: auto; max-height: 480px; position: relative; background: var(--surface);
+  overflow: auto; flex: 1; height: calc(100vh - 180px); max-height: calc(100vh - 180px);
+  position: relative; background: var(--surface);
 }
 
 .sheet-table {
