@@ -8,7 +8,7 @@ export function useMerge(step, baseFile, others, outputCols, joinConfig, joinTyp
   const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
-    if (step === 4) setMerged(computeMerge(baseFile, others, outputCols, joinConfig, joinType));
+    if (step >= 4) setMerged(computeMerge(baseFile, others, outputCols, joinConfig, joinType));
     // eslint-disable-next-line
   }, [step, baseFile, others, outputCols, JSON.stringify(joinConfig), joinType]);
 

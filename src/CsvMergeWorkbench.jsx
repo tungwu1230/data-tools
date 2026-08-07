@@ -16,6 +16,8 @@ import StepPreview from "./components/StepPreview.jsx";
 import ColumnSelectionSidebar from "./components/ColumnSelectionSidebar.jsx";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 
+import StepDataQuality from "./components/StepDataQuality.jsx";
+
 export default function CsvMergeWorkbench() {
   const [step, setStep] = useState(1);
   const [collapsed, setCollapsed] = useState({});
@@ -39,11 +41,13 @@ export default function CsvMergeWorkbench() {
   const canStep2 = files.length > 0 && outputColumns.outputCols.length > 0;
   const canStep3 = canStep2 && (files.length <= 1 || others.every((f) => joinConfig[f.id]?.theirKey && joinConfig[f.id]?.baseKey));
   const canStep4 = canStep3 && outputColumns.outputCols.length > 0;
+  const canStep5 = canStep4 && merged && merged.total > 0;
 
   const isNextDisabled = () => {
     if (step === 1) return !canStep2;
     if (step === 2) return !canStep3;
     if (step === 3) return !canStep4;
+    if (step === 4) return !canStep5;
     return true;
   };
 
@@ -82,7 +86,8 @@ export default function CsvMergeWorkbench() {
             <StepTab n={1} label="檔案與欄位" active={step === 1} done={step > 1} onClick={() => setStep(1)} />
             <StepTab n={2} label="合併設定" active={step === 2} done={step > 2} onClick={() => canStep2 && setStep(2)} disabled={!canStep2} />
             <StepTab n={3} label="輸出設定" active={step === 3} done={step > 3} onClick={() => canStep3 && setStep(3)} disabled={!canStep3} />
-            <StepTab n={4} label="預覽與匯出" active={step === 4} done={false} onClick={() => canStep4 && setStep(4)} disabled={!canStep4} />
+            <StepTab n={4} label="預覽與匯出" active={step === 4} done={step > 4} onClick={() => canStep4 && setStep(4)} disabled={!canStep4} />
+            <StepTab n={5} label="資料品質報告" active={step === 5} done={false} onClick={() => canStep5 && setStep(5)} disabled={!canStep5} />
           </div>
         </div>
 
@@ -120,7 +125,10 @@ export default function CsvMergeWorkbench() {
             />
           )}
           {step === 4 && (
-            <StepPreview merged={merged} exporting={exporting} exportCsv={exportCsv} outputCols={outputColumns.outputCols} baseFile={baseFile} files={files} />
+            <StepPreview merged={merged} exporting={exporting} exportCsv={exportCsv} outputCols={outputColumns.outputCols} baseFile={baseFile} goToStep5={() => setStep(5)} />
+          )}
+          {step === 5 && (
+            <StepDataQuality merged={merged} outputCols={outputColumns.outputCols} baseFile={baseFile} files={files} exportCsv={exportCsv} exporting={exporting} />
           )}
         </div>
 
@@ -134,18 +142,25 @@ export default function CsvMergeWorkbench() {
             <ArrowLeft size={14} />
             <span>上一步</span>
           </button>
-          {step < 4 ? (
+          {step < 5 ? (
             <button
               className="btn primary"
               style={{ display: "inline-flex", alignItems: "center", gap: 5 }}
               disabled={isNextDisabled()}
               onClick={() => setStep((s) => s + 1)}
             >
-              <span>下一步</span>
+              <span>{step === 4 ? "查看資料品質報告" : "下一步"}</span>
               <ArrowRight size={14} />
             </button>
           ) : (
-            <span style={{ fontSize: 11.5, color: "var(--text-faint)" }}>{merged ? `共 ${merged.total} 列 · ${outputColumns.outputCols.length} 欄` : ""}</span>
+            <button
+              className="btn primary"
+              style={{ display: "inline-flex", alignItems: "center", gap: 5 }}
+              onClick={exportCsv}
+              disabled={exporting || !merged || merged.total === 0}
+            >
+              <span>{exporting ? "匯出中…" : "匯出 CSV"}</span>
+            </button>
           )}
         </div>
       </div>
