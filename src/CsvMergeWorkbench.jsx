@@ -10,6 +10,7 @@ import { useMerge } from "./hooks/useMerge.js";
 import StepTab from "./components/StepTab.jsx";
 import CollectionsSidebar from "./components/CollectionsSidebar.jsx";
 import StepFiles from "./components/StepFiles.jsx";
+import StepMergeConfig from "./components/StepMergeConfig.jsx";
 import StepOutput from "./components/StepOutput.jsx";
 import StepPreview from "./components/StepPreview.jsx";
 import { ArrowLeft, ArrowRight } from "lucide-react";
@@ -27,14 +28,22 @@ export default function CsvMergeWorkbench() {
   const { merged, exporting, exportCsv } = useMerge(step, baseFile, others, outputColumns.outputCols, joinConfig);
   const sidebar = useCollectionSidebar({ files, collections, createCollection, updateCollection });
 
-  // keep the step-1 checkbox in sync when a column is dropped from the output list in step 2
+  // keep the step-1 checkbox in sync when a column is dropped from the output list in step 3
   const removeOutputCol = (oc) => {
     outputColumns.removeOutputCol(oc.id);
     columnSelection.deselectColumn(oc.fileId, oc.column);
   };
 
-  const canStep2 = outputColumns.outputCols.length > 0;
-  const canStep3 = canStep2 && (files.length === 1 || others.every((f) => joinConfig[f.id]?.theirKey && joinConfig[f.id]?.baseKey));
+  const canStep2 = files.length > 0 && outputColumns.outputCols.length > 0;
+  const canStep3 = canStep2 && (files.length <= 1 || others.every((f) => joinConfig[f.id]?.theirKey && joinConfig[f.id]?.baseKey));
+  const canStep4 = canStep3 && outputColumns.outputCols.length > 0;
+
+  const isNextDisabled = () => {
+    if (step === 1) return !canStep2;
+    if (step === 2) return !canStep3;
+    if (step === 3) return !canStep4;
+    return true;
+  };
 
   return (
     <div className="wb">
@@ -68,11 +77,12 @@ export default function CsvMergeWorkbench() {
       <div className="wb-main">
         <div className="wb-head">
           <p className="wb-title">CSV 合併工作台</p>
-          <p className="wb-sub">上傳多份 CSV → 挑選欄位 → 設定輸出 → 匯出合併結果</p>
+          <p className="wb-sub">上傳 CSV → 挑選欄位 → 合併設定 → 輸出設定 → 匯出合併結果</p>
           <div className="wb-steps">
             <StepTab n={1} label="檔案與欄位" active={step === 1} done={step > 1} onClick={() => setStep(1)} />
-            <StepTab n={2} label="輸出設定" active={step === 2} done={step > 2} onClick={() => canStep2 && setStep(2)} disabled={!canStep2} />
-            <StepTab n={3} label="預覽與匯出" active={step === 3} done={false} onClick={() => canStep3 && setStep(3)} disabled={!canStep3} />
+            <StepTab n={2} label="合併設定" active={step === 2} done={step > 2} onClick={() => canStep2 && setStep(2)} disabled={!canStep2} />
+            <StepTab n={3} label="輸出設定" active={step === 3} done={step > 3} onClick={() => canStep3 && setStep(3)} disabled={!canStep3} />
+            <StepTab n={4} label="預覽與匯出" active={step === 4} done={false} onClick={() => canStep4 && setStep(4)} disabled={!canStep4} />
           </div>
         </div>
 
@@ -89,6 +99,12 @@ export default function CsvMergeWorkbench() {
             />
           )}
           {step === 2 && (
+            <StepMergeConfig
+              files={files} baseFileId={baseFileId} setBaseFileId={setBaseFileId}
+              others={others} joinConfig={joinConfig} setJoinConfig={setJoinConfig}
+            />
+          )}
+          {step === 3 && (
             <StepOutput
               outputCols={outputColumns.outputCols} selectedOutIds={outputColumns.selectedOutIds} toggleOutSelect={outputColumns.toggleOutSelect}
               selectAllOut={outputColumns.selectAllOut} clearOutSel={outputColumns.clearOutSel}
@@ -97,7 +113,7 @@ export default function CsvMergeWorkbench() {
               resetOutputName={outputColumns.resetOutputName} removeOutputCol={removeOutputCol}
             />
           )}
-          {step === 3 && (
+          {step === 4 && (
             <StepPreview merged={merged} exporting={exporting} exportCsv={exportCsv} outputCols={outputColumns.outputCols} baseFile={baseFile} />
           )}
         </div>
@@ -112,11 +128,11 @@ export default function CsvMergeWorkbench() {
             <ArrowLeft size={14} />
             <span>上一步</span>
           </button>
-          {step < 3 ? (
+          {step < 4 ? (
             <button
               className="btn primary"
               style={{ display: "inline-flex", alignItems: "center", gap: 5 }}
-              disabled={step === 1 ? !canStep2 : !canStep3}
+              disabled={isNextDisabled()}
               onClick={() => setStep((s) => s + 1)}
             >
               <span>下一步</span>

@@ -43,6 +43,7 @@ export const CSS = `
   width: 264px; flex-shrink: 0; border-right: 1px solid var(--border);
   background: var(--surface); display: flex; flex-direction: column;
   padding: 18px 16px; overflow-y: auto;
+  position: sticky; top: 0; height: 100vh; max-height: 100vh; align-self: flex-start;
 }
 .sidebar-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
 .sidebar-head h4 { margin: 0; font-size: 11px; color: var(--text-dim); font-weight: 700; text-transform: uppercase; letter-spacing: .08em; }

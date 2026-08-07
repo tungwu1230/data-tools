@@ -2,8 +2,6 @@ import { highlightMatch } from "../utils/highlightMatch.jsx";
 import {
   ChevronRight,
   ChevronDown,
-  GitMerge,
-  ArrowRight,
   Upload,
   Trash2,
   BookmarkPlus,
@@ -18,7 +16,7 @@ export default function StepFiles(props) {
     collapsed, setCollapsed, previewOpen, setPreviewOpen,
     selections, toggleColumn, visibleHeaders, filterMode, updateFilter, clearFilter,
     selectAllVisible, clearVisible, collections, openCreateFromFile,
-    baseFileId, setBaseFileId, others, joinConfig, setJoinConfig,
+    baseFileId,
   } = props;
 
   return (
@@ -39,114 +37,7 @@ export default function StepFiles(props) {
       </div>
 
       {files.length === 0 && (
-        <div className="empty"><b>還沒有上傳任何檔案。</b><br />上傳兩份以上的 CSV，即可開始挑選要合併的欄位。</div>
-      )}
-
-      {files.length > 1 && (
-        <div className="merge-panel">
-          <div className="merge-panel-head">
-            <div className="merge-panel-title-row">
-              <GitMerge className="merge-icon" size={18} />
-              <h4>合併設定 (Left Join)</h4>
-            </div>
-            <p>選一份「主檔案」作為合併基準，其餘檔案透過指定的比對欄位（Key）將資料合併進來。</p>
-          </div>
-
-          <div className="merge-section base-file-section">
-            <div className="merge-field-group">
-              <label className="merge-label">
-                <span className="badge amber">主檔案</span>
-                <span>基準檔案：</span>
-              </label>
-              <div className="merge-select-wrap">
-                <select
-                  className="merge-select base-select"
-                  value={baseFileId || ""}
-                  onChange={(e) => setBaseFileId(e.target.value)}
-                >
-                  {files.map((f) => (
-                    <option key={f.id} value={f.id}>
-                      {f.name} ({f.rowCount} 列 · {f.headers.length} 欄)
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-          </div>
-
-          {others.length > 0 && (
-            <div className="merge-section join-files-section">
-              <div className="merge-section-subtitle">
-                副檔案比對欄位設定
-              </div>
-              <div className="join-cards-list">
-                {others.map((f) => {
-                  const base = files.find((x) => x.id === baseFileId);
-                  const cfg = joinConfig[f.id] || {};
-                  return (
-                    <div className="join-file-card" key={f.id}>
-                      <div className="join-file-header">
-                        <span className="join-file-tag">副檔案</span>
-                        <span className="join-file-name" title={f.name}>{f.name}</span>
-                        <span className="join-file-meta">{f.rowCount} 列</span>
-                      </div>
-                      <div className="join-mapping-row">
-                        <div className="mapping-col">
-                          <label className="mapping-label">此檔案的比對欄位</label>
-                          <select
-                            className="merge-select"
-                            value={cfg.theirKey || ""}
-                            onChange={(e) =>
-                              setJoinConfig((p) => ({
-                                ...p,
-                                [f.id]: { ...cfg, theirKey: e.target.value },
-                              }))
-                            }
-                          >
-                            <option value="">選擇此檔案的欄位…</option>
-                            {f.headers.map((h) => (
-                              <option key={h} value={h}>
-                                {h}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-
-                        <div className="mapping-connector">
-                          <ArrowRight className="connector-arrow" size={16} />
-                          <span className="connector-text">對應主檔案</span>
-                        </div>
-
-                        <div className="mapping-col">
-                          <label className="mapping-label" title={`主檔案 (${base?.name || ""}) 的比對欄位`}>
-                            主檔案 ({base?.name || "主檔案"}) 的比對欄位
-                          </label>
-                          <select
-                            className="merge-select"
-                            value={cfg.baseKey || ""}
-                            onChange={(e) =>
-                              setJoinConfig((p) => ({
-                                ...p,
-                                [f.id]: { ...cfg, baseKey: e.target.value },
-                              }))
-                            }
-                          >
-                            <option value="">選擇主檔案的欄位…</option>
-                            {base?.headers.map((h) => (
-                              <option key={h} value={h}>
-                                {h}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-        </div>
+        <div className="empty"><b>還沒有上傳任何檔案。</b><br />上傳 CSV，即可開始挑選要合併的欄位。</div>
       )}
 
       {files.map((file) => {
