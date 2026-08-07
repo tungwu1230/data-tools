@@ -191,16 +191,187 @@ export const CSS = `
 .col-item .match { color: var(--accent-strong); font-weight: 700; }
 .no-match { color: var(--text-faint); font-size: 12px; padding: 10px 4px; }
 
-.merge-panel { border: 1px solid var(--border); border-radius: 12px; padding: 16px 18px; margin-bottom: 20px; background: var(--surface); }
-.merge-panel h4 { margin: 0 0 4px 0; font-size: 12.5px; color: var(--text); font-weight: 700; }
-.merge-panel p { margin: 0 0 14px 0; font-size: 11.5px; color: var(--text-dim); line-height: 1.65; max-width: 62ch; }
-.merge-row { display: flex; align-items: center; gap: 10px; margin-bottom: 9px; font-size: 12px; }
-.merge-row label { width: 92px; color: var(--text-dim); flex-shrink: 0; }
-select {
-  background: var(--surface); border: 1px solid var(--border); border-radius: 7px;
-  color: var(--text); font-family: var(--mono); font-size: 12px; padding: 6px 9px;
+.merge-panel {
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 20px 24px;
+  margin-bottom: 24px;
+  background: var(--surface);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
 }
-select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-dim); }
+.merge-panel-head {
+  margin-bottom: 18px;
+}
+.merge-panel-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.merge-icon {
+  width: 18px;
+  height: 18px;
+  color: var(--accent);
+  flex-shrink: 0;
+}
+.merge-panel h4 {
+  margin: 0;
+  font-size: 14.5px;
+  color: var(--text);
+  font-weight: 700;
+}
+.merge-panel p {
+  margin: 6px 0 0 0;
+  font-size: 12.5px;
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+
+.base-file-section {
+  background: var(--surface-alt);
+  border: 1px solid var(--border-soft);
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin-bottom: 18px;
+}
+.merge-field-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.merge-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  flex-shrink: 0;
+}
+.badge.amber {
+  background: var(--amber-dim);
+  color: var(--amber);
+  border: 1px solid var(--amber-line);
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-weight: 600;
+}
+.merge-select-wrap {
+  flex: 1;
+  min-width: 280px;
+}
+
+.merge-section-subtitle {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 10px;
+}
+
+.join-cards-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.join-file-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+.join-file-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border-soft);
+  flex-wrap: wrap;
+}
+.join-file-tag {
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  font-size: 11px;
+  color: var(--text-dim);
+  padding: 1px 7px;
+  border-radius: 4px;
+  font-weight: 600;
+}
+.join-file-name {
+  font-family: var(--mono);
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text);
+  word-break: break-all;
+  flex: 1;
+  min-width: 180px;
+}
+.join-file-meta {
+  font-size: 11.5px;
+  color: var(--text-faint);
+  font-family: var(--mono);
+}
+
+.join-mapping-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.mapping-col {
+  flex: 1;
+  min-width: 220px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.mapping-label {
+  font-size: 11.5px;
+  color: var(--text-dim);
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mapping-connector {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding-bottom: 7px;
+  flex-shrink: 0;
+  color: var(--accent);
+  gap: 2px;
+}
+.connector-arrow {
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1;
+}
+.connector-text {
+  font-size: 10.5px;
+  color: var(--text-faint);
+  white-space: nowrap;
+}
+
+.merge-select, select {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 12px;
+  padding: 7px 10px;
+  width: 100%;
+}
+select:focus, .merge-select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-dim);
+}
 
 .out-toolbar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; padding: 13px 14px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface-alt); }
 .out-toolbar input[type=text] { width: 90px; background: var(--surface); border: 1px solid var(--border); border-radius: 7px; color: var(--text); font-family: var(--mono); font-size: 12px; padding: 6px 9px; }

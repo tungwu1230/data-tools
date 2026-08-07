@@ -28,32 +28,114 @@ export default function StepFiles(props) {
 
       {files.length > 1 && (
         <div className="merge-panel">
-          <h4>合併設定</h4>
-          <p>選一份「主檔案」作為合併基準，其餘檔案透過指定的比對欄位（key）合併進來，等同於以主檔案為主的左合併（left join）。</p>
-          <div className="merge-row">
-            <label>主檔案</label>
-            <select value={baseFileId || ""} onChange={(e) => setBaseFileId(e.target.value)}>
-              {files.map((f) => <option key={f.id} value={f.id}>{f.name}</option>)}
-            </select>
+          <div className="merge-panel-head">
+            <div className="merge-panel-title-row">
+              <svg className="merge-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="18" cy="18" r="3"/>
+                <circle cx="6" cy="6" r="3"/>
+                <circle cx="6" cy="18" r="3"/>
+                <path d="M6 9v6"/>
+                <path d="M9 6h6a3 3 0 0 1 3 3v6"/>
+              </svg>
+              <h4>合併設定 (Left Join)</h4>
+            </div>
+            <p>選一份「主檔案」作為合併基準，其餘檔案透過指定的比對欄位（Key）將資料合併進來。</p>
           </div>
-          {others.map((f) => {
-            const base = files.find((x) => x.id === baseFileId);
-            const cfg = joinConfig[f.id] || {};
-            return (
-              <div className="merge-row" key={f.id}>
-                <label style={{ fontFamily: "var(--mono)", fontSize: 11.5 }}>{f.name}</label>
-                <select value={cfg.theirKey || ""} onChange={(e) => setJoinConfig((p) => ({ ...p, [f.id]: { ...cfg, theirKey: e.target.value } }))}>
-                  <option value="">此檔案的比對欄位…</option>
-                  {f.headers.map((h) => <option key={h} value={h}>{h}</option>)}
-                </select>
-                <span style={{ color: "var(--text-faint)", fontSize: 11 }}>對應主檔案的</span>
-                <select value={cfg.baseKey || ""} onChange={(e) => setJoinConfig((p) => ({ ...p, [f.id]: { ...cfg, baseKey: e.target.value } }))}>
-                  <option value="">主檔案的比對欄位…</option>
-                  {base?.headers.map((h) => <option key={h} value={h}>{h}</option>)}
+
+          <div className="merge-section base-file-section">
+            <div className="merge-field-group">
+              <label className="merge-label">
+                <span className="badge amber">主檔案</span>
+                <span>基準檔案：</span>
+              </label>
+              <div className="merge-select-wrap">
+                <select
+                  className="merge-select base-select"
+                  value={baseFileId || ""}
+                  onChange={(e) => setBaseFileId(e.target.value)}
+                >
+                  {files.map((f) => (
+                    <option key={f.id} value={f.id}>
+                      {f.name} ({f.rowCount} 列 · {f.headers.length} 欄)
+                    </option>
+                  ))}
                 </select>
               </div>
-            );
-          })}
+            </div>
+          </div>
+
+          {others.length > 0 && (
+            <div className="merge-section join-files-section">
+              <div className="merge-section-subtitle">
+                副檔案比對欄位設定
+              </div>
+              <div className="join-cards-list">
+                {others.map((f) => {
+                  const base = files.find((x) => x.id === baseFileId);
+                  const cfg = joinConfig[f.id] || {};
+                  return (
+                    <div className="join-file-card" key={f.id}>
+                      <div className="join-file-header">
+                        <span className="join-file-tag">副檔案</span>
+                        <span className="join-file-name" title={f.name}>{f.name}</span>
+                        <span className="join-file-meta">{f.rowCount} 列</span>
+                      </div>
+                      <div className="join-mapping-row">
+                        <div className="mapping-col">
+                          <label className="mapping-label">此檔案的比對欄位</label>
+                          <select
+                            className="merge-select"
+                            value={cfg.theirKey || ""}
+                            onChange={(e) =>
+                              setJoinConfig((p) => ({
+                                ...p,
+                                [f.id]: { ...cfg, theirKey: e.target.value },
+                              }))
+                            }
+                          >
+                            <option value="">選擇此檔案的欄位…</option>
+                            {f.headers.map((h) => (
+                              <option key={h} value={h}>
+                                {h}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <div className="mapping-connector">
+                          <span className="connector-arrow">➔</span>
+                          <span className="connector-text">對應主檔案</span>
+                        </div>
+
+                        <div className="mapping-col">
+                          <label className="mapping-label" title={`主檔案 (${base?.name || ""}) 的比對欄位`}>
+                            主檔案 ({base?.name || "主檔案"}) 的比對欄位
+                          </label>
+                          <select
+                            className="merge-select"
+                            value={cfg.baseKey || ""}
+                            onChange={(e) =>
+                              setJoinConfig((p) => ({
+                                ...p,
+                                [f.id]: { ...cfg, baseKey: e.target.value },
+                              }))
+                            }
+                          >
+                            <option value="">選擇主檔案的欄位…</option>
+                            {base?.headers.map((h) => (
+                              <option key={h} value={h}>
+                                {h}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
