@@ -100,8 +100,11 @@ export function topValueCounts(values, topN = 8) {
 // `forcedType` ("number" | "text") lets the caller override the auto-detected
 // type — the user knows better than an 80%-threshold heuristic whether a
 // column is really categorical (e.g. zip codes) or continuous.
+// `forcedDiscrete` (true | false) similarly overrides the "≤ binCount unique
+// values ⇒ discrete" heuristic below, for numeric columns where the caller
+// wants to force per-value bars vs. a binned histogram regardless of cardinality.
 export function buildColumnDistribution(rows, column, opts = {}) {
-  const { binCount = 10, topN = 8, forcedType = null } = opts;
+  const { binCount = 10, topN = 8, forcedType = null, forcedDiscrete = null } = opts;
   const total = rows.length;
   const values = toFilledStrings(rows, column);
   const missing = total - values.length;
@@ -111,8 +114,9 @@ export function buildColumnDistribution(rows, column, opts = {}) {
   if (inferredType === "number") {
     const numbers = values.filter(isNumeric).map(Number);
     // Few enough distinct values ⇒ show each one as its own bar instead of
-    // binning into ranges (which would blur real values together).
-    const isDiscrete = new Set(numbers).size <= binCount;
+    // binning into ranges (which would blur real values together) — unless
+    // the caller has forced an explicit discrete/continuous choice.
+    const isDiscrete = typeof forcedDiscrete === "boolean" ? forcedDiscrete : new Set(numbers).size <= binCount;
     return {
       column,
       total,
@@ -141,6 +145,30 @@ export function buildColumnDistribution(rows, column, opts = {}) {
     otherCount,
     otherPct,
   };
+}
+
+// Independent per-column tallies (NOT a joint cross-tab): each side's own
+// value→count map, merged onto one shared category axis. Neither side needs
+// row alignment, so this works whether A and B come from the same file or not.
+export function buildMarginalComparison(distA, distB) {
+  const entriesOf = (dist) => {
+    if (dist.inferredType === "number") {
+      return (dist.discreteValues || []).map((v) => [String(v.value), v.count]);
+    }
+    const entries = dist.topValues.map((v) => [v.value || "(空)", v.count]);
+    if (dist.otherCount > 0) entries.push(["其他", dist.otherCount]);
+    return entries;
+  };
+  const mapA = new Map(entriesOf(distA));
+  const mapB = new Map(entriesOf(distB));
+  const bothNumeric = distA.inferredType === "number" && distB.inferredType === "number";
+  const labels = [...new Set([...mapA.keys(), ...mapB.keys()])];
+  labels.sort((x, y) =>
+    bothNumeric
+      ? Number(x) - Number(y)
+      : (mapB.get(y) || 0) + (mapA.get(y) || 0) - ((mapB.get(x) || 0) + (mapA.get(x) || 0))
+  );
+  return labels.map((label) => ({ label, aCount: mapA.get(label) || 0, bCount: mapB.get(label) || 0 }));
 }
 
 export function pearsonCorrelation(points) {

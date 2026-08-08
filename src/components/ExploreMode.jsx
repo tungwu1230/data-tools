@@ -35,7 +35,8 @@ function TypePicker({ value, onChange }) {
   return (
     <select value={value} onChange={(e) => onChange(e.target.value)}>
       <option value="auto">自動判斷</option>
-      <option value="number">連續數值</option>
+      <option value="discrete">離散數值</option>
+      <option value="continuous">連續數值</option>
       <option value="text">類別</option>
     </select>
   );
@@ -194,38 +195,135 @@ function CrossTab({ table, labelA, labelB }) {
   );
 }
 
+// "Nice" axis numbers (D3-style), so gridlines land on round values instead of the raw max.
+function niceNumber(range, round) {
+  if (range <= 0) return 1;
+  const exponent = Math.floor(Math.log10(range));
+  const fraction = range / 10 ** exponent;
+  let niceFraction;
+  if (round) {
+    niceFraction = fraction < 1.5 ? 1 : fraction < 3 ? 2 : fraction < 7 ? 5 : 10;
+  } else {
+    niceFraction = fraction <= 1 ? 1 : fraction <= 2 ? 2 : fraction <= 5 ? 5 : 10;
+  }
+  return niceFraction * 10 ** exponent;
+}
+
+function buildAxisTicks(maxVal, tickCount = 5) {
+  if (maxVal <= 0) return { ticks: [0, 1], niceMax: 1 };
+  const tickSpacing = niceNumber(niceNumber(maxVal, false) / (tickCount - 1), true);
+  const niceMax = Math.ceil(maxVal / tickSpacing) * tickSpacing;
+  const ticks = [];
+  for (let v = 0; v <= niceMax + tickSpacing * 1e-6; v += tickSpacing) ticks.push(Math.round(v * 1e6) / 1e6);
+  return { ticks, niceMax };
+}
+
 function GroupedStats({ groups, catLabel, numLabel }) {
   if (groups.length === 0) return <div className="empty-mini">沒有足夠的成對資料可比較。</div>;
-  const maxAvg = Math.max(1, ...groups.map((g) => g.avg));
+
+  const W = 640, H = 300, PAD_L = 46, PAD_R = 16, PAD_T = 20, PAD_B = 56;
+  const plotW = W - PAD_L - PAD_R;
+  const plotH = H - PAD_T - PAD_B;
+  const { ticks, niceMax } = buildAxisTicks(Math.max(...groups.map((g) => g.avg), 0));
+  const yFor = (v) => PAD_T + plotH - (v / niceMax) * plotH;
+  const slotW = plotW / groups.length;
+  const barW = Math.min(56, slotW * 0.55);
+  const baseY = PAD_T + plotH;
+
   return (
-    <div className="quality-table-wrap">
-      <table className="quality-table">
-        <thead>
-          <tr>
-            <th>{catLabel}</th>
-            <th>筆數</th>
-            <th>{numLabel} 範圍</th>
-            <th>{numLabel} 平均</th>
-          </tr>
-        </thead>
-        <tbody>
-          {groups.map((g) => (
-            <tr key={g.category}>
-              <td style={{ fontWeight: 700 }}>{g.category}</td>
-              <td className="mono-text">{g.count.toLocaleString()}</td>
-              <td className="num-summary">{fmtNum(g.min)} ~ {fmtNum(g.max)}</td>
-              <td>
-                <div className="cat-bar-row inline">
-                  <div className="cat-bar-track" style={{ width: 90 }}>
-                    <div className="cat-bar-fill" style={{ width: `${(g.avg / maxAvg) * 100}%` }} />
-                  </div>
-                  <span className="cat-bar-count auto">{fmtNum(g.avg)}</span>
-                </div>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <div className="bar-chart-wrap">
+      <svg className="bar-chart-svg" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet">
+        {ticks.map((t) => (
+          <g key={t}>
+            <line x1={PAD_L} y1={yFor(t)} x2={W - PAD_R} y2={yFor(t)} className="bar-chart-grid" />
+            <text x={PAD_L - 8} y={yFor(t)} textAnchor="end" dominantBaseline="middle" className="bar-chart-tick">
+              {fmtNum(t)}
+            </text>
+          </g>
+        ))}
+        <line x1={PAD_L} y1={baseY} x2={W - PAD_R} y2={baseY} className="bar-chart-axis" />
+        {groups.map((g, i) => {
+          const cx = PAD_L + slotW * i + slotW / 2;
+          const barH = niceMax > 0 ? (g.avg / niceMax) * plotH : 0;
+          const labelY = baseY + 16;
+          return (
+            <g key={g.category}>
+              <rect x={cx - barW / 2} y={baseY - barH} width={barW} height={Math.max(barH, 1)} className="bar-chart-bar">
+                <title>{`${g.category}：${numLabel} 平均 ${fmtNum(g.avg)}（${g.count.toLocaleString()} 筆，範圍 ${fmtNum(g.min)} ~ ${fmtNum(g.max)}）`}</title>
+              </rect>
+              <text x={cx} y={baseY - barH - 6} textAnchor="middle" className="bar-chart-value">{fmtNum(g.avg)}</text>
+              <text x={cx} y={labelY} textAnchor="end" className="bar-chart-xlabel" transform={`rotate(-30 ${cx} ${labelY})`}>
+                {g.category}
+              </text>
+            </g>
+          );
+        })}
+      </svg>
+      <div className="bar-chart-caption">{catLabel} 各類別的 {numLabel} 平均</div>
+    </div>
+  );
+}
+
+function DistCompareChart({ data, labelA, labelB }) {
+  if (data.length === 0) return <div className="empty-mini">沒有足夠的資料可比較。</div>;
+
+  const W = 640, H = 320, PAD_L = 46, PAD_R = 16, PAD_T = 20, PAD_B = 56;
+  const plotW = W - PAD_L - PAD_R;
+  const plotH = H - PAD_T - PAD_B;
+  const { ticks, niceMax } = buildAxisTicks(Math.max(...data.map((d) => Math.max(d.aCount, d.bCount)), 0));
+  const baseY = PAD_T + plotH;
+  const slotW = plotW / data.length;
+  const groupW = Math.min(70, slotW * 0.7);
+  const barW = groupW / 2 - 2;
+
+  return (
+    <div className="bar-chart-wrap">
+      <div className="bar-chart-legend">
+        <span className="bar-chart-legend-item"><span className="bar-chart-swatch a" />{labelA}</span>
+        <span className="bar-chart-legend-item"><span className="bar-chart-swatch b" />{labelB}</span>
+      </div>
+      <svg className="bar-chart-svg" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet">
+        {ticks.map((t) => (
+          <g key={t}>
+            <line x1={PAD_L} y1={PAD_T + plotH - (t / niceMax) * plotH} x2={W - PAD_R} y2={PAD_T + plotH - (t / niceMax) * plotH} className="bar-chart-grid" />
+            <text x={PAD_L - 8} y={PAD_T + plotH - (t / niceMax) * plotH} textAnchor="end" dominantBaseline="middle" className="bar-chart-tick">
+              {fmtNum(t)}
+            </text>
+          </g>
+        ))}
+        <line x1={PAD_L} y1={baseY} x2={W - PAD_R} y2={baseY} className="bar-chart-axis" />
+        {data.map((d, i) => {
+          const groupCx = PAD_L + slotW * i + slotW / 2;
+          const aH = niceMax > 0 ? (d.aCount / niceMax) * plotH : 0;
+          const bH = niceMax > 0 ? (d.bCount / niceMax) * plotH : 0;
+          const aX = groupCx - groupW / 2;
+          const bX = groupCx + 2;
+          const labelY = baseY + 16;
+          return (
+            <g key={d.label}>
+              {d.aCount > 0 && (
+                <>
+                  <rect x={aX} y={baseY - aH} width={barW} height={Math.max(aH, 1)} className="bar-chart-bar a">
+                    <title>{`${labelA} · ${d.label}：${d.aCount.toLocaleString()} 筆`}</title>
+                  </rect>
+                  <text x={aX + barW / 2} y={baseY - aH - 6} textAnchor="middle" className="bar-chart-value">{d.aCount}</text>
+                </>
+              )}
+              {d.bCount > 0 && (
+                <>
+                  <rect x={bX} y={baseY - bH} width={barW} height={Math.max(bH, 1)} className="bar-chart-bar b">
+                    <title>{`${labelB} · ${d.label}：${d.bCount.toLocaleString()} 筆`}</title>
+                  </rect>
+                  <text x={bX + barW / 2} y={baseY - bH - 6} textAnchor="middle" className="bar-chart-value">{d.bCount}</text>
+                </>
+              )}
+              <text x={groupCx} y={labelY} textAnchor="end" className="bar-chart-xlabel" transform={`rotate(-30 ${groupCx} ${labelY})`}>
+                {d.label}
+              </text>
+            </g>
+          );
+        })}
+      </svg>
     </div>
   );
 }
@@ -234,7 +332,8 @@ export default function ExploreMode({ files }) {
   const {
     fileA, fileAId, setFileAId, colA, setColA, typeA, setTypeA,
     fileB, fileBId, setFileBId, colB, setColB, typeB, setTypeB,
-    distA, distB, comparing, sameFile, pairwise, clearCompare,
+    distA, distB, comparing, sameFile, pairwise,
+    bothDiscreteNumeric, distCompare, clearCompare,
   } = useExploreMode(files);
 
   if (files.length === 0) {
@@ -323,7 +422,20 @@ export default function ExploreMode({ files }) {
         </div>
       )}
 
-      {comparing && sameFile && pairwise && (
+      {comparing && bothDiscreteNumeric && distCompare && (
+        <div className="explore-panel">
+          <div className="explore-panel-head">
+            <span className="explore-panel-title">
+              <span className="explore-series-tag a">A</span> {fileA.name} · {colA}
+              <GitCompare size={13} className="explore-vs-icon" />
+              <span className="explore-series-tag b">B</span> {fileB.name} · {colB}
+            </span>
+          </div>
+          <DistCompareChart data={distCompare} labelA={`${fileA.name} · ${colA}`} labelB={`${fileB.name} · ${colB}`} />
+        </div>
+      )}
+
+      {comparing && !bothDiscreteNumeric && sameFile && pairwise && (
         <div className="explore-panel">
           <div className="explore-panel-head">
             <span className="explore-panel-title">
@@ -344,7 +456,7 @@ export default function ExploreMode({ files }) {
         </div>
       )}
 
-      {comparing && !sameFile && distA && distB && (
+      {comparing && !bothDiscreteNumeric && !sameFile && distA && distB && (
         <>
           <div className="warn">
             <Info size={13} className="explore-warn-icon" />

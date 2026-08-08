@@ -142,6 +142,21 @@ describe("buildColumnDistribution", () => {
     const d = buildColumnDistribution(rows, "age", { forcedType: "bogus" });
     expect(d.inferredType).toBe("number");
   });
+
+  it("forcedDiscrete: false renders a high-cardinality-shaped histogram even for a low-cardinality column", () => {
+    const d = buildColumnDistribution(rows, "age", { forcedDiscrete: false });
+    expect(d.isDiscrete).toBe(false);
+    expect(d.discreteValues).toBeNull();
+    expect(d.histogram.length).toBeGreaterThan(0);
+  });
+
+  it("forcedDiscrete: true renders discrete bars even for a high-cardinality column", () => {
+    const manyRows = Array.from({ length: 15 }, (_, i) => ({ age: String(i) }));
+    const d = buildColumnDistribution(manyRows, "age", { forcedDiscrete: true });
+    expect(d.isDiscrete).toBe(true);
+    expect(d.histogram).toBeNull();
+    expect(d.discreteValues.length).toBe(15);
+  });
 });
 
 describe("pearsonCorrelation", () => {

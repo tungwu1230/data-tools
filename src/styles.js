@@ -1244,4 +1244,24 @@ select:focus, .merge-select:focus {
 .scatter-point:hover { fill-opacity: 0.9; }
 .scatter-corr { font-size: 11.5px; color: var(--text-dim); font-family: var(--mono); }
 
+/* Grouped bar chart (categorical × numeric average) */
+.bar-chart-wrap { display: flex; flex-direction: column; gap: 6px; }
+.bar-chart-svg { width: 100%; height: 300px; }
+.bar-chart-grid { stroke: var(--border-soft); stroke-width: 1; }
+.bar-chart-axis { stroke: var(--border); stroke-width: 1; }
+.bar-chart-tick { font-size: 10px; fill: var(--text-faint); font-family: var(--mono); }
+.bar-chart-bar { fill: var(--accent); }
+.bar-chart-bar:hover { fill: var(--accent-strong); }
+.bar-chart-value { font-size: 11px; fill: var(--text); font-family: var(--mono); font-weight: 600; }
+.bar-chart-xlabel { font-size: 10.5px; fill: var(--text-dim); font-family: var(--mono); }
+.bar-chart-caption { font-size: 11px; color: var(--text-faint); text-align: center; }
+
+.bar-chart-legend { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; font-size: 11.5px; color: var(--text-dim); }
+.bar-chart-legend-item { display: flex; align-items: center; gap: 6px; }
+.bar-chart-swatch { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+.bar-chart-swatch.a, .bar-chart-bar.a { background: var(--accent); fill: var(--accent); }
+.bar-chart-swatch.b, .bar-chart-bar.b { background: #7c3aed; fill: #7c3aed; }
+.bar-chart-bar.a:hover { fill: var(--accent-strong); }
+.bar-chart-bar.b:hover { fill: #6d28d9; }
+
 `;
