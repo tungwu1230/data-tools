@@ -3,6 +3,7 @@ import {
   inferColumnType,
   numericSummary,
   buildHistogram,
+  buildDiscreteNumericDistribution,
   topValueCounts,
   buildColumnDistribution,
   pearsonCorrelation,
@@ -64,6 +65,16 @@ describe("topValueCounts", () => {
   });
 });
 
+describe("buildDiscreteNumericDistribution", () => {
+  it("one bar per distinct value, sorted ascending", () => {
+    expect(buildDiscreteNumericDistribution([4, -9, 4, 0, -9, -9])).toEqual([
+      { value: -9, count: 3, pct: 50 },
+      { value: 0, count: 1, pct: 16.7 },
+      { value: 4, count: 2, pct: 33.3 },
+    ]);
+  });
+});
+
 describe("buildColumnDistribution", () => {
   const rows = [
     { age: "10", city: "Taipei" },
@@ -72,12 +83,28 @@ describe("buildColumnDistribution", () => {
     { age: "", city: "" },
   ];
 
-  it("numeric column: histogram + stats, missing counted", () => {
+  it("low-cardinality numeric column ⇒ discrete bars, not a binned histogram", () => {
+    // 3 distinct values, well under the default binCount(10) — this is exactly
+    // the case that used to get smeared across mostly-empty histogram bins.
     const d = buildColumnDistribution(rows, "age");
     expect(d.inferredType).toBe("number");
     expect(d.filled).toBe(3);
     expect(d.missing).toBe(1);
     expect(d.stats).toMatchObject({ min: 10, max: 30 });
+    expect(d.isDiscrete).toBe(true);
+    expect(d.histogram).toBeNull();
+    expect(d.discreteValues).toEqual([
+      { value: 10, count: 1, pct: 33.3 },
+      { value: 20, count: 1, pct: 33.3 },
+      { value: 30, count: 1, pct: 33.3 },
+    ]);
+  });
+
+  it("high-cardinality numeric column ⇒ binned histogram, not discrete bars", () => {
+    const manyRows = Array.from({ length: 15 }, (_, i) => ({ age: String(i) }));
+    const d = buildColumnDistribution(manyRows, "age");
+    expect(d.isDiscrete).toBe(false);
+    expect(d.discreteValues).toBeNull();
     expect(d.histogram.length).toBeGreaterThan(0);
   });
 
@@ -87,6 +114,33 @@ describe("buildColumnDistribution", () => {
     expect(d.filled).toBe(3);
     expect(d.missing).toBe(1);
     expect(d.topValues[0]).toEqual({ value: "Taipei", count: 2, pct: 66.7 });
+  });
+
+  it("auto-detected type is exposed even when not overridden", () => {
+    expect(buildColumnDistribution(rows, "age").autoType).toBe("number");
+    expect(buildColumnDistribution(rows, "city").autoType).toBe("text");
+  });
+
+  it("forcedType: 'text' overrides an auto-numeric column into categorical top-values", () => {
+    const d = buildColumnDistribution(rows, "age", { forcedType: "text" });
+    expect(d.autoType).toBe("number");
+    expect(d.inferredType).toBe("text");
+    expect(d.topValues).toBeDefined();
+    expect(d.histogram).toBeUndefined();
+  });
+
+  it("forcedType: 'number' overrides an auto-categorical column into numeric stats", () => {
+    const d = buildColumnDistribution(rows, "city", { forcedType: "number" });
+    expect(d.autoType).toBe("text");
+    expect(d.inferredType).toBe("number");
+    // "Taipei"/"Tainan" aren't numeric, so no values survive the numeric parse
+    expect(d.stats).toBeNull();
+    expect(d.discreteValues).toEqual([]);
+  });
+
+  it("an invalid forcedType value is ignored and falls back to auto-detection", () => {
+    const d = buildColumnDistribution(rows, "age", { forcedType: "bogus" });
+    expect(d.inferredType).toBe("number");
   });
 });
 

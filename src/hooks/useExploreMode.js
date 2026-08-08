@@ -9,11 +9,15 @@ import {
 
 // Explore Mode reads raw per-file rows straight from useCsvFiles — it does not
 // depend on join config or the merged Dataset, so it's usable right after upload.
+// "auto" defers to buildColumnDistribution's own heuristic; "number"/"text"
+// force the column to be read as continuous numeric or categorical.
 export function useExploreMode(files) {
   const [fileAId, setFileAId] = useState(null);
   const [colA, setColA] = useState(null);
+  const [typeA, setTypeA] = useState("auto");
   const [fileBId, setFileBId] = useState(null);
   const [colB, setColB] = useState(null);
+  const [typeB, setTypeB] = useState("auto");
 
   // self-heal file selection when the file list changes, same pattern as useCsvFiles.baseFileId
   useEffect(() => {
@@ -38,8 +42,18 @@ export function useExploreMode(files) {
     if (colB && fileB && !fileB.headers.includes(colB)) setColB(null);
   }, [fileB]); // eslint-disable-line
 
-  const distA = useMemo(() => (fileA && colA ? buildColumnDistribution(fileA.rows, colA) : null), [fileA, colA]);
-  const distB = useMemo(() => (fileB && colB ? buildColumnDistribution(fileB.rows, colB) : null), [fileB, colB]);
+  // a fresh column pick shouldn't silently inherit the previous column's type override
+  useEffect(() => setTypeA("auto"), [colA]);
+  useEffect(() => setTypeB("auto"), [colB]);
+
+  const distA = useMemo(
+    () => (fileA && colA ? buildColumnDistribution(fileA.rows, colA, { forcedType: typeA === "auto" ? null : typeA }) : null),
+    [fileA, colA, typeA]
+  );
+  const distB = useMemo(
+    () => (fileB && colB ? buildColumnDistribution(fileB.rows, colB, { forcedType: typeB === "auto" ? null : typeB }) : null),
+    [fileB, colB, typeB]
+  );
 
   const comparing = !!(fileB && colB && distA && distB);
   const sameFile = comparing && fileA.id === fileB.id;
@@ -67,8 +81,8 @@ export function useExploreMode(files) {
 
   return {
     files,
-    fileA, fileAId, setFileAId, colA, setColA,
-    fileB, fileBId, setFileBId, colB, setColB,
+    fileA, fileAId, setFileAId, colA, setColA, typeA, setTypeA,
+    fileB, fileBId, setFileBId, colB, setColB, typeB, setTypeB,
     distA, distB, comparing, sameFile, pairwise,
     clearCompare,
   };

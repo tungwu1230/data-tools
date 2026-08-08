@@ -61,6 +61,22 @@ export function buildHistogram(numbers, binCount = 10) {
   return bins;
 }
 
+// One bar per distinct value, sorted ascending — for low-cardinality numeric
+// columns (ratings, small integer codes) where binning into ranges would
+// smear a handful of real values across mostly-empty bins.
+export function buildDiscreteNumericDistribution(numbers) {
+  const total = numbers.length;
+  const counts = new Map();
+  numbers.forEach((n) => counts.set(n, (counts.get(n) || 0) + 1));
+  return [...counts.keys()]
+    .sort((a, b) => a - b)
+    .map((value) => ({
+      value,
+      count: counts.get(value),
+      pct: Number(((counts.get(value) / total) * 100).toFixed(1)),
+    }));
+}
+
 export function topValueCounts(values, topN = 8) {
   const counts = new Map();
   values.forEach((v) => counts.set(v, (counts.get(v) || 0) + 1));
@@ -81,24 +97,34 @@ export function topValueCounts(values, topN = 8) {
 
 // The single-column entry point: infers number vs. categorical and returns
 // whichever shape (histogram or top-values) the chart needs to render.
+// `forcedType` ("number" | "text") lets the caller override the auto-detected
+// type — the user knows better than an 80%-threshold heuristic whether a
+// column is really categorical (e.g. zip codes) or continuous.
 export function buildColumnDistribution(rows, column, opts = {}) {
-  const { binCount = 10, topN = 8 } = opts;
+  const { binCount = 10, topN = 8, forcedType = null } = opts;
   const total = rows.length;
   const values = toFilledStrings(rows, column);
   const missing = total - values.length;
-  const inferredType = inferColumnType(values);
+  const autoType = inferColumnType(values);
+  const inferredType = forcedType === "number" || forcedType === "text" ? forcedType : autoType;
 
   if (inferredType === "number") {
     const numbers = values.filter(isNumeric).map(Number);
+    // Few enough distinct values ⇒ show each one as its own bar instead of
+    // binning into ranges (which would blur real values together).
+    const isDiscrete = new Set(numbers).size <= binCount;
     return {
       column,
       total,
       filled: values.length,
       missing,
+      autoType,
       inferredType,
       uniqueCount: new Set(values).size,
       stats: numericSummary(numbers),
-      histogram: buildHistogram(numbers, binCount),
+      isDiscrete,
+      histogram: isDiscrete ? null : buildHistogram(numbers, binCount),
+      discreteValues: isDiscrete ? buildDiscreteNumericDistribution(numbers) : null,
     };
   }
 
@@ -108,6 +134,7 @@ export function buildColumnDistribution(rows, column, opts = {}) {
     total,
     filled: values.length,
     missing,
+    autoType,
     inferredType,
     uniqueCount,
     topValues: top,

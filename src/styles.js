@@ -1194,6 +1194,7 @@ select:focus, .merge-select:focus {
 .explore-picker-row { display: flex; align-items: flex-end; gap: 10px; flex-wrap: wrap; }
 .explore-picker { display: flex; flex-direction: column; gap: 6px; min-width: 190px; flex: 1; }
 .explore-picker label { font-size: 11.5px; color: var(--text-dim); font-weight: 600; }
+.explore-type-picker { min-width: 130px; flex: 0 0 auto; }
 .explore-series-tag {
   display: inline-flex; align-items: center; justify-content: center;
   width: 22px; height: 22px; border-radius: 6px; font-size: 11px; font-weight: 700;
@@ -1222,6 +1223,8 @@ select:focus, .merge-select:focus {
 .dist-bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; min-width: 6px; }
 .dist-bar { width: 100%; background: var(--accent); border-radius: 3px 3px 0 0; min-height: 2px; transition: height .2s ease; }
 .dist-axis-row { display: flex; justify-content: space-between; font-size: 10.5px; color: var(--text-faint); font-family: var(--mono); margin-top: 6px; }
+.dist-discrete-labels { display: flex; gap: 3px; margin-top: 6px; }
+.dist-discrete-label { flex: 1; min-width: 6px; text-align: center; font-size: 10.5px; font-family: var(--mono); color: var(--text-faint); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* Category bars (categorical distribution) */
 .cat-bar-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }

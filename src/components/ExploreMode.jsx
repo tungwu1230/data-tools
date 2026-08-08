@@ -6,9 +6,18 @@ function fmtNum(n) {
   return Number.isInteger(n) ? n.toLocaleString() : n.toLocaleString(undefined, { maximumFractionDigits: 2 });
 }
 
+function typeLabel(t) {
+  return t === "number" ? "數值" : "類別";
+}
+
 function DistChips({ dist }) {
+  const overridden = dist.inferredType !== dist.autoType;
   return (
     <div className="explore-stat-chips">
+      <span className="explore-stat-chip">
+        視為{typeLabel(dist.inferredType)}
+        {overridden && <span className="faint-text">（自動判斷為{typeLabel(dist.autoType)}）</span>}
+      </span>
       <span className="explore-stat-chip">總筆數 {dist.total.toLocaleString()}</span>
       <span className="explore-stat-chip">已填 {dist.filled.toLocaleString()}</span>
       <span className="explore-stat-chip">缺漏 {dist.missing.toLocaleString()}</span>
@@ -19,6 +28,16 @@ function DistChips({ dist }) {
         </span>
       )}
     </div>
+  );
+}
+
+function TypePicker({ value, onChange }) {
+  return (
+    <select value={value} onChange={(e) => onChange(e.target.value)}>
+      <option value="auto">自動判斷</option>
+      <option value="number">連續數值</option>
+      <option value="text">類別</option>
+    </select>
   );
 }
 
@@ -40,6 +59,32 @@ function Histogram({ histogram }) {
       <div className="dist-axis-row">
         <span>{fmtNum(histogram[0]?.binStart)}</span>
         <span>{fmtNum(histogram[histogram.length - 1]?.binEnd)}</span>
+      </div>
+    </div>
+  );
+}
+
+function DiscreteBars({ values }) {
+  const max = Math.max(1, ...values.map((v) => v.count));
+  return (
+    <div>
+      <div className="dist-chart">
+        {values.map((v) => (
+          <div className="dist-bar-col" key={v.value}>
+            <div
+              className="dist-bar"
+              style={{ height: `${(v.count / max) * 100}%` }}
+              title={`${fmtNum(v.value)}：${v.count} 筆（${v.pct}%）`}
+            />
+          </div>
+        ))}
+      </div>
+      <div className="dist-discrete-labels">
+        {values.map((v) => (
+          <span className="dist-discrete-label" key={v.value} title={fmtNum(v.value)}>
+            {fmtNum(v.value)}
+          </span>
+        ))}
       </div>
     </div>
   );
@@ -73,7 +118,9 @@ function CategoryBars({ topValues, otherCount, otherPct }) {
 
 function DistributionBody({ dist }) {
   if (dist.filled === 0) return <div className="empty-mini">此欄位沒有可用的資料值。</div>;
-  if (dist.inferredType === "number") return <Histogram histogram={dist.histogram} />;
+  if (dist.inferredType === "number") {
+    return dist.isDiscrete ? <DiscreteBars values={dist.discreteValues} /> : <Histogram histogram={dist.histogram} />;
+  }
   return <CategoryBars topValues={dist.topValues} otherCount={dist.otherCount} otherPct={dist.otherPct} />;
 }
 
@@ -184,8 +231,11 @@ function GroupedStats({ groups, catLabel, numLabel }) {
 }
 
 export default function ExploreMode({ files }) {
-  const { fileA, fileAId, setFileAId, colA, setColA, fileB, fileBId, setFileBId, colB, setColB, distA, distB, comparing, sameFile, pairwise, clearCompare } =
-    useExploreMode(files);
+  const {
+    fileA, fileAId, setFileAId, colA, setColA, typeA, setTypeA,
+    fileB, fileBId, setFileBId, colB, setColB, typeB, setTypeB,
+    distA, distB, comparing, sameFile, pairwise, clearCompare,
+  } = useExploreMode(files);
 
   if (files.length === 0) {
     return <div className="empty">請先在「檔案與欄位」上傳至少一份 CSV，即可使用探索模式檢視欄位分佈。</div>;
@@ -217,6 +267,10 @@ export default function ExploreMode({ files }) {
               {fileA?.headers.map((h) => <option key={h} value={h}>{h}</option>)}
             </select>
           </div>
+          <div className="explore-picker explore-type-picker">
+            <label>視為</label>
+            <TypePicker value={typeA} onChange={setTypeA} />
+          </div>
 
           {!fileBId ? (
             <button
@@ -243,6 +297,10 @@ export default function ExploreMode({ files }) {
                   <option value="">選擇欄位…</option>
                   {fileB?.headers.map((h) => <option key={h} value={h}>{h}</option>)}
                 </select>
+              </div>
+              <div className="explore-picker explore-type-picker">
+                <label>視為</label>
+                <TypePicker value={typeB} onChange={setTypeB} />
               </div>
               <button className="btn ghost xs" onClick={clearCompare} title="取消比較" style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
                 <X size={13} />
