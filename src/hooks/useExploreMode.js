@@ -92,14 +92,29 @@ export function useExploreMode(files) {
     if (!sameFile || bothDiscreteNumeric) return null;
     if (distA.inferredType === "number" && distB.inferredType === "number") {
       const points = buildScatterPoints(fileA.rows, colA, colB);
-      return { kind: "scatter", points, correlation: pearsonCorrelation(points) };
+      return { kind: "scatter", points, correlation: pearsonCorrelation(points), labelX: colA, labelY: colB };
     }
     if (distA.inferredType !== "number" && distB.inferredType !== "number") {
-      return { kind: "crosstab", table: buildCrossTab(fileA.rows, colA, colB) };
+      return { kind: "crosstab", table: buildCrossTab(fileA.rows, colA, colB), labelA: colA, labelB: colB };
     }
     const [catCol, numCol] = distA.inferredType === "number" ? [colB, colA] : [colA, colB];
-    return { kind: "grouped", groups: buildGroupedNumericStats(fileA.rows, catCol, numCol) };
+    return { kind: "grouped", groups: buildGroupedNumericStats(fileA.rows, catCol, numCol), catLabel: catCol, numLabel: numCol };
   }, [sameFile, bothDiscreteNumeric, distA, distB, fileA, colA, colB]);
+
+  // Single discriminated result for "what should the results area show" —
+  // collapses the comparing/sameFile/bothDiscreteNumeric/pairwise combination
+  // ExploreMode.jsx used to re-derive itself into one tag the component can switch on.
+  const view = useMemo(() => {
+    if (!colA || !distA) return { kind: "empty" };
+    if (!comparing) return { kind: "single", dist: distA };
+
+    const labelA = `${fileA.name} · ${colA}`;
+    const labelB = `${fileB.name} · ${colB}`;
+
+    if (bothDiscreteNumeric) return { kind: "discreteCompare", data: distCompare, labelA, labelB };
+    if (sameFile) return pairwise ? { kind: "pairwise", pairwise } : { kind: "empty" };
+    return distB ? { kind: "sideBySide", distA, distB, labelA, labelB } : { kind: "empty" };
+  }, [colA, distA, comparing, bothDiscreteNumeric, distCompare, sameFile, pairwise, distB, fileA, fileB, colB]);
 
   const clearCompare = () => {
     setFileBId(null);
@@ -110,8 +125,7 @@ export function useExploreMode(files) {
     files,
     fileA, fileAId, setFileAId, colA, setColA, typeA, setTypeA,
     fileB, fileBId, setFileBId, colB, setColB, typeB, setTypeB,
-    distA, distB, comparing, sameFile, pairwise,
-    bothDiscreteNumeric, distCompare,
+    view,
     clearCompare,
   };
 }

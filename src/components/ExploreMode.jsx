@@ -332,8 +332,7 @@ export default function ExploreMode({ files }) {
   const {
     fileA, fileAId, setFileAId, colA, setColA, typeA, setTypeA,
     fileB, fileBId, setFileBId, colB, setColB, typeB, setTypeB,
-    distA, distB, comparing, sameFile, pairwise,
-    bothDiscreteNumeric, distCompare, clearCompare,
+    view, clearCompare,
   } = useExploreMode(files);
 
   if (files.length === 0) {
@@ -410,19 +409,19 @@ export default function ExploreMode({ files }) {
         </div>
       </div>
 
-      {!colA && <div className="empty">請先選擇欄位 A，開始檢視分佈。</div>}
+      {view.kind === "empty" && <div className="empty">請先選擇欄位 A，開始檢視分佈。</div>}
 
-      {colA && !comparing && distA && (
+      {view.kind === "single" && (
         <div className="explore-panel">
           <div className="explore-panel-head">
             <span className="explore-panel-title">{fileA.name} · {colA}</span>
           </div>
-          <DistChips dist={distA} />
-          <div className="explore-body"><DistributionBody dist={distA} /></div>
+          <DistChips dist={view.dist} />
+          <div className="explore-body"><DistributionBody dist={view.dist} /></div>
         </div>
       )}
 
-      {comparing && bothDiscreteNumeric && distCompare && (
+      {view.kind === "discreteCompare" && (
         <div className="explore-panel">
           <div className="explore-panel-head">
             <span className="explore-panel-title">
@@ -431,32 +430,28 @@ export default function ExploreMode({ files }) {
               <span className="explore-series-tag b">B</span> {fileB.name} · {colB}
             </span>
           </div>
-          <DistCompareChart data={distCompare} labelA={`${fileA.name} · ${colA}`} labelB={`${fileB.name} · ${colB}`} />
+          <DistCompareChart data={view.data} labelA={view.labelA} labelB={view.labelB} />
         </div>
       )}
 
-      {comparing && !bothDiscreteNumeric && sameFile && pairwise && (
+      {view.kind === "pairwise" && (
         <div className="explore-panel">
           <div className="explore-panel-head">
             <span className="explore-panel-title">
               {fileA.name} · {colA} <GitCompare size={13} className="explore-vs-icon" /> {colB}
             </span>
           </div>
-          {pairwise.kind === "scatter" && (
-            <ScatterChart points={pairwise.points} correlation={pairwise.correlation} labelX={colA} labelY={colB} />
+          {view.pairwise.kind === "scatter" && (
+            <ScatterChart points={view.pairwise.points} correlation={view.pairwise.correlation} labelX={view.pairwise.labelX} labelY={view.pairwise.labelY} />
           )}
-          {pairwise.kind === "crosstab" && <CrossTab table={pairwise.table} labelA={colA} labelB={colB} />}
-          {pairwise.kind === "grouped" && (
-            <GroupedStats
-              groups={pairwise.groups}
-              catLabel={distA.inferredType === "number" ? colB : colA}
-              numLabel={distA.inferredType === "number" ? colA : colB}
-            />
+          {view.pairwise.kind === "crosstab" && <CrossTab table={view.pairwise.table} labelA={view.pairwise.labelA} labelB={view.pairwise.labelB} />}
+          {view.pairwise.kind === "grouped" && (
+            <GroupedStats groups={view.pairwise.groups} catLabel={view.pairwise.catLabel} numLabel={view.pairwise.numLabel} />
           )}
         </div>
       )}
 
-      {comparing && !bothDiscreteNumeric && !sameFile && distA && distB && (
+      {view.kind === "sideBySide" && (
         <>
           <div className="warn">
             <Info size={13} className="explore-warn-icon" />
@@ -467,15 +462,15 @@ export default function ExploreMode({ files }) {
               <div className="explore-panel-head">
                 <span className="explore-panel-title"><span className="explore-series-tag a">A</span> {fileA.name} · {colA}</span>
               </div>
-              <DistChips dist={distA} />
-              <div className="explore-body"><DistributionBody dist={distA} /></div>
+              <DistChips dist={view.distA} />
+              <div className="explore-body"><DistributionBody dist={view.distA} /></div>
             </div>
             <div className="explore-panel">
               <div className="explore-panel-head">
                 <span className="explore-panel-title"><span className="explore-series-tag b">B</span> {fileB.name} · {colB}</span>
               </div>
-              <DistChips dist={distB} />
-              <div className="explore-body"><DistributionBody dist={distB} /></div>
+              <DistChips dist={view.distB} />
+              <div className="explore-body"><DistributionBody dist={view.distB} /></div>
             </div>
           </div>
         </>
