@@ -1,5 +1,6 @@
 import { Activity, GitCompare, X, Info } from "lucide-react";
 import { useExploreMode } from "../hooks/useExploreMode.js";
+import { buildAxisTicks } from "../utils/distribution.js";
 
 function fmtNum(n) {
   if (n === undefined || n === null || Number.isNaN(n)) return "-";
@@ -195,27 +196,22 @@ function CrossTab({ table, labelA, labelB }) {
   );
 }
 
-// "Nice" axis numbers (D3-style), so gridlines land on round values instead of the raw max.
-function niceNumber(range, round) {
-  if (range <= 0) return 1;
-  const exponent = Math.floor(Math.log10(range));
-  const fraction = range / 10 ** exponent;
-  let niceFraction;
-  if (round) {
-    niceFraction = fraction < 1.5 ? 1 : fraction < 3 ? 2 : fraction < 7 ? 5 : 10;
-  } else {
-    niceFraction = fraction <= 1 ? 1 : fraction <= 2 ? 2 : fraction <= 5 ? 5 : 10;
-  }
-  return niceFraction * 10 ** exponent;
-}
-
-function buildAxisTicks(maxVal, tickCount = 5) {
-  if (maxVal <= 0) return { ticks: [0, 1], niceMax: 1 };
-  const tickSpacing = niceNumber(niceNumber(maxVal, false) / (tickCount - 1), true);
-  const niceMax = Math.ceil(maxVal / tickSpacing) * tickSpacing;
-  const ticks = [];
-  for (let v = 0; v <= niceMax + tickSpacing * 1e-6; v += tickSpacing) ticks.push(Math.round(v * 1e6) / 1e6);
-  return { ticks, niceMax };
+// Shared y-axis scaffold (gridlines + tick labels + baseline) for GroupedStats
+// and DistCompareChart — both are bar charts over the same buildAxisTicks() output.
+function ChartYAxis({ ticks, yFor, padL, right, baseY }) {
+  return (
+    <>
+      {ticks.map((t) => (
+        <g key={t}>
+          <line x1={padL} y1={yFor(t)} x2={right} y2={yFor(t)} className="bar-chart-grid" />
+          <text x={padL - 8} y={yFor(t)} textAnchor="end" dominantBaseline="middle" className="bar-chart-tick">
+            {fmtNum(t)}
+          </text>
+        </g>
+      ))}
+      <line x1={padL} y1={baseY} x2={right} y2={baseY} className="bar-chart-axis" />
+    </>
+  );
 }
 
 function GroupedStats({ groups, catLabel, numLabel }) {
@@ -233,15 +229,7 @@ function GroupedStats({ groups, catLabel, numLabel }) {
   return (
     <div className="bar-chart-wrap">
       <svg className="bar-chart-svg" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet">
-        {ticks.map((t) => (
-          <g key={t}>
-            <line x1={PAD_L} y1={yFor(t)} x2={W - PAD_R} y2={yFor(t)} className="bar-chart-grid" />
-            <text x={PAD_L - 8} y={yFor(t)} textAnchor="end" dominantBaseline="middle" className="bar-chart-tick">
-              {fmtNum(t)}
-            </text>
-          </g>
-        ))}
-        <line x1={PAD_L} y1={baseY} x2={W - PAD_R} y2={baseY} className="bar-chart-axis" />
+        <ChartYAxis ticks={ticks} yFor={yFor} padL={PAD_L} right={W - PAD_R} baseY={baseY} />
         {groups.map((g, i) => {
           const cx = PAD_L + slotW * i + slotW / 2;
           const barH = niceMax > 0 ? (g.avg / niceMax) * plotH : 0;
@@ -271,6 +259,7 @@ function DistCompareChart({ data, labelA, labelB }) {
   const plotW = W - PAD_L - PAD_R;
   const plotH = H - PAD_T - PAD_B;
   const { ticks, niceMax } = buildAxisTicks(Math.max(...data.map((d) => Math.max(d.aCount, d.bCount)), 0));
+  const yFor = (v) => PAD_T + plotH - (v / niceMax) * plotH;
   const baseY = PAD_T + plotH;
   const slotW = plotW / data.length;
   const groupW = Math.min(70, slotW * 0.7);
@@ -283,15 +272,7 @@ function DistCompareChart({ data, labelA, labelB }) {
         <span className="bar-chart-legend-item"><span className="bar-chart-swatch b" />{labelB}</span>
       </div>
       <svg className="bar-chart-svg" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet">
-        {ticks.map((t) => (
-          <g key={t}>
-            <line x1={PAD_L} y1={PAD_T + plotH - (t / niceMax) * plotH} x2={W - PAD_R} y2={PAD_T + plotH - (t / niceMax) * plotH} className="bar-chart-grid" />
-            <text x={PAD_L - 8} y={PAD_T + plotH - (t / niceMax) * plotH} textAnchor="end" dominantBaseline="middle" className="bar-chart-tick">
-              {fmtNum(t)}
-            </text>
-          </g>
-        ))}
-        <line x1={PAD_L} y1={baseY} x2={W - PAD_R} y2={baseY} className="bar-chart-axis" />
+        <ChartYAxis ticks={ticks} yFor={yFor} padL={PAD_L} right={W - PAD_R} baseY={baseY} />
         {data.map((d, i) => {
           const groupCx = PAD_L + slotW * i + slotW / 2;
           const aH = niceMax > 0 ? (d.aCount / niceMax) * plotH : 0;

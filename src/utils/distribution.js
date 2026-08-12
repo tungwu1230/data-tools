@@ -241,6 +241,31 @@ export function buildCrossTab(rows, colA, colB, topN = 6) {
   return { catsA, catsB, matrix, maxCell, totalPairs: pairs.length };
 }
 
+// "Nice" axis numbers (D3-style), so gridlines land on round values instead of the raw max.
+function niceNumber(range, round) {
+  if (range <= 0) return 1;
+  const exponent = Math.floor(Math.log10(range));
+  const fraction = range / 10 ** exponent;
+  let niceFraction;
+  if (round) {
+    niceFraction = fraction < 1.5 ? 1 : fraction < 3 ? 2 : fraction < 7 ? 5 : 10;
+  } else {
+    niceFraction = fraction <= 1 ? 1 : fraction <= 2 ? 2 : fraction <= 5 ? 5 : 10;
+  }
+  return niceFraction * 10 ** exponent;
+}
+
+// Used by the bar-chart y-axes in ExploreMode.jsx (GroupedStats, DistCompareChart)
+// to pick round tick values and a chart ceiling instead of using the raw data max.
+export function buildAxisTicks(maxVal, tickCount = 5) {
+  if (maxVal <= 0) return { ticks: [0, 1], niceMax: 1 };
+  const tickSpacing = niceNumber(niceNumber(maxVal, false) / (tickCount - 1), true);
+  const niceMax = Math.ceil(maxVal / tickSpacing) * tickSpacing;
+  const ticks = [];
+  for (let v = 0; v <= niceMax + tickSpacing * 1e-6; v += tickSpacing) ticks.push(Math.round(v * 1e6) / 1e6);
+  return { ticks, niceMax };
+}
+
 // Same-file only: numeric summary of `numCol`, grouped by top categories of `catCol`.
 export function buildGroupedNumericStats(rows, catCol, numCol, topN = 8) {
   const groups = new Map();

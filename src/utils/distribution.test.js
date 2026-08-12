@@ -10,6 +10,7 @@ import {
   buildScatterPoints,
   buildCrossTab,
   buildGroupedNumericStats,
+  buildAxisTicks,
 } from "./distribution.js";
 
 describe("inferColumnType", () => {
@@ -222,5 +223,25 @@ describe("buildGroupedNumericStats", () => {
     const groups = buildGroupedNumericStats(rows, "dept", "salary");
     expect(groups[0]).toMatchObject({ category: "eng", count: 2, min: 100, max: 200, avg: 150 });
     expect(groups[1]).toMatchObject({ category: "sales", count: 1, min: 50, max: 50 });
+  });
+});
+
+describe("buildAxisTicks", () => {
+  it("zero or negative max ⇒ a single [0, 1] tick range", () => {
+    expect(buildAxisTicks(0)).toEqual({ ticks: [0, 1], niceMax: 1 });
+    expect(buildAxisTicks(-5)).toEqual({ ticks: [0, 1], niceMax: 1 });
+  });
+
+  it("rounds the ceiling up to a 'nice' value and spaces ticks evenly", () => {
+    expect(buildAxisTicks(83)).toEqual({ ticks: [0, 20, 40, 60, 80, 100], niceMax: 100 });
+  });
+
+  it("niceMax is always ≥ the raw max", () => {
+    const { niceMax } = buildAxisTicks(83);
+    expect(niceMax).toBeGreaterThanOrEqual(83);
+  });
+
+  it("honors a custom tickCount", () => {
+    expect(buildAxisTicks(10, 3)).toEqual({ ticks: [0, 5, 10], niceMax: 10 });
   });
 });
