@@ -129,6 +129,10 @@ export function buildColumnDistribution(rows, column, opts = {}) {
       isDiscrete,
       histogram: isDiscrete ? null : buildHistogram(numbers, binCount),
       discreteValues: isDiscrete ? buildDiscreteNumericDistribution(numbers) : null,
+      // Filled values that failed Number() parsing (e.g. a text column forced
+      // to number via forcedType) — silently excluded from `numbers` above,
+      // so the caller needs this to explain a sparse or empty chart.
+      nonNumericCount: values.length - numbers.length,
     };
   }
 
@@ -150,24 +154,14 @@ export function buildColumnDistribution(rows, column, opts = {}) {
 // Independent per-column tallies (NOT a joint cross-tab): each side's own
 // value→count map, merged onto one shared category axis. Neither side needs
 // row alignment, so this works whether A and B come from the same file or not.
+// Only called for two discrete-numeric columns (see useExploreMode's
+// bothDiscreteNumeric), so both sides always come from discreteValues.
 export function buildMarginalComparison(distA, distB) {
-  const entriesOf = (dist) => {
-    if (dist.inferredType === "number") {
-      return (dist.discreteValues || []).map((v) => [String(v.value), v.count]);
-    }
-    const entries = dist.topValues.map((v) => [v.value || "(空)", v.count]);
-    if (dist.otherCount > 0) entries.push(["其他", dist.otherCount]);
-    return entries;
-  };
+  const entriesOf = (dist) => (dist.discreteValues || []).map((v) => [String(v.value), v.count]);
   const mapA = new Map(entriesOf(distA));
   const mapB = new Map(entriesOf(distB));
-  const bothNumeric = distA.inferredType === "number" && distB.inferredType === "number";
   const labels = [...new Set([...mapA.keys(), ...mapB.keys()])];
-  labels.sort((x, y) =>
-    bothNumeric
-      ? Number(x) - Number(y)
-      : (mapB.get(y) || 0) + (mapA.get(y) || 0) - ((mapB.get(x) || 0) + (mapA.get(x) || 0))
-  );
+  labels.sort((x, y) => Number(x) - Number(y));
   return labels.map((label) => ({ label, aCount: mapA.get(label) || 0, bCount: mapB.get(label) || 0 }));
 }
 

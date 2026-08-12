@@ -121,7 +121,27 @@ function CategoryBars({ topValues, otherCount, otherPct }) {
 function DistributionBody({ dist }) {
   if (dist.filled === 0) return <div className="empty-mini">此欄位沒有可用的資料值。</div>;
   if (dist.inferredType === "number") {
-    return dist.isDiscrete ? <DiscreteBars values={dist.discreteValues} /> : <Histogram histogram={dist.histogram} />;
+    if (dist.nonNumericCount === dist.filled) {
+      return (
+        <div className="warn">
+          <Info size={13} className="explore-warn-icon" />
+          此欄位的已填值都無法解析為數字，因此沒有圖表可顯示（可能是手動選擇了「離散數值」/「連續數值」，但欄位內容其實不是數字）。
+        </div>
+      );
+    }
+    const chart = dist.isDiscrete ? <DiscreteBars values={dist.discreteValues} /> : <Histogram histogram={dist.histogram} />;
+    if (dist.nonNumericCount > 0) {
+      return (
+        <div>
+          <div className="warn">
+            <Info size={13} className="explore-warn-icon" />
+            {dist.nonNumericCount.toLocaleString()} 筆已填值無法解析為數字，未列入以下圖表。
+          </div>
+          {chart}
+        </div>
+      );
+    }
+    return chart;
   }
   return <CategoryBars topValues={dist.topValues} otherCount={dist.otherCount} otherPct={dist.otherPct} />;
 }
@@ -220,7 +240,10 @@ function GroupedStats({ groups, catLabel, numLabel }) {
   const W = 640, H = 300, PAD_L = 46, PAD_R = 16, PAD_T = 20, PAD_B = 56;
   const plotW = W - PAD_L - PAD_R;
   const plotH = H - PAD_T - PAD_B;
-  const { ticks, niceMax } = buildAxisTicks(Math.max(...groups.map((g) => g.avg), 0));
+  // Scale by magnitude (not raw value) so a negative average still gets a
+  // proportional bar — drawn downward from the baseline instead of being
+  // clamped to a 1px sliver above it.
+  const { ticks, niceMax } = buildAxisTicks(Math.max(...groups.map((g) => Math.abs(g.avg)), 0));
   const yFor = (v) => PAD_T + plotH - (v / niceMax) * plotH;
   const slotW = plotW / groups.length;
   const barW = Math.min(56, slotW * 0.55);
@@ -232,14 +255,17 @@ function GroupedStats({ groups, catLabel, numLabel }) {
         <ChartYAxis ticks={ticks} yFor={yFor} padL={PAD_L} right={W - PAD_R} baseY={baseY} />
         {groups.map((g, i) => {
           const cx = PAD_L + slotW * i + slotW / 2;
-          const barH = niceMax > 0 ? (g.avg / niceMax) * plotH : 0;
+          const negative = g.avg < 0;
+          const barH = niceMax > 0 ? (Math.abs(g.avg) / niceMax) * plotH : 0;
+          const barY = negative ? baseY : baseY - barH;
+          const valueY = negative ? barY + Math.max(barH, 1) + 12 : barY - 6;
           const labelY = baseY + 16;
           return (
             <g key={g.category}>
-              <rect x={cx - barW / 2} y={baseY - barH} width={barW} height={Math.max(barH, 1)} className="bar-chart-bar">
+              <rect x={cx - barW / 2} y={barY} width={barW} height={Math.max(barH, 1)} className="bar-chart-bar">
                 <title>{`${g.category}：${numLabel} 平均 ${fmtNum(g.avg)}（${g.count.toLocaleString()} 筆，範圍 ${fmtNum(g.min)} ~ ${fmtNum(g.max)}）`}</title>
               </rect>
-              <text x={cx} y={baseY - barH - 6} textAnchor="middle" className="bar-chart-value">{fmtNum(g.avg)}</text>
+              <text x={cx} y={valueY} textAnchor="middle" className="bar-chart-value">{fmtNum(g.avg)}</text>
               <text x={cx} y={labelY} textAnchor="end" className="bar-chart-xlabel" transform={`rotate(-30 ${cx} ${labelY})`}>
                 {g.category}
               </text>

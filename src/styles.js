@@ -1228,14 +1228,12 @@ select:focus, .merge-select:focus {
 
 /* Category bars (categorical distribution) */
 .cat-bar-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
-.cat-bar-row.inline { margin-bottom: 0; }
 .cat-bar-row:last-child { margin-bottom: 0; }
 .cat-bar-label { width: 120px; flex-shrink: 0; font-size: 11.5px; font-family: var(--mono); color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .cat-bar-track { flex: 1; height: 14px; background: var(--surface-sunken); border-radius: 4px; overflow: hidden; }
 .cat-bar-fill { height: 100%; background: var(--accent); border-radius: 4px; }
 .cat-bar-fill.other { background: var(--text-faint); }
 .cat-bar-count { width: 90px; flex-shrink: 0; text-align: right; font-size: 10.5px; font-family: var(--mono); color: var(--text-dim); }
-.cat-bar-count.auto { width: auto; }
 
 /* Scatter (same-file numeric × numeric) */
 .scatter-wrap { display: flex; flex-direction: column; gap: 8px; }
