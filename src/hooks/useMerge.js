@@ -3,52 +3,36 @@ import Papa from "papaparse";
 import { datasetFromWorkerPayload } from "../utils/dataset.js";
 
 // computes the final merged rows on entering step 3, and drives the CSV export.
-// The actual computeMerge call runs in a Web Worker (src/workers/mergeWorker.js)
-// so large merges don't block the main thread; `mergePending` lets Step 3 → 4
+// The actual computeMerge call runs in a Web Worker, dispatched through the
+// `request` function from useSharedWorker (shared with useDataQuality) so
+// large merges don't block the main thread; `mergePending` lets Step 3 → 4
 // show a loading state instead of appearing to hang.
-export function useMerge(step, baseFile, others, outputCols, joinConfig, joinType = "left") {
+export function useMerge(request, step, baseFile, others, outputCols, joinConfig, joinType = "left") {
   const [merged, setMerged] = useState(null);
   const [mergePending, setMergePending] = useState(false);
   const [exporting, setExporting] = useState(false);
-  const workerRef = useRef(null);
   const requestIdRef = useRef(0);
-
-  // terminate whichever worker is live (created lazily in the effect below) on unmount
-  useEffect(() => {
-    return () => {
-      workerRef.current?.terminate();
-      workerRef.current = null;
-    };
-  }, []);
 
   useEffect(() => {
     if (step < 4) return;
 
-    if (!workerRef.current) {
-      workerRef.current = new Worker(new URL("../workers/mergeWorker.js", import.meta.url), { type: "module" });
-    }
-    const worker = workerRef.current;
     const requestId = ++requestIdRef.current;
-
     setMergePending(true);
     setMerged(null);
-    worker.onmessage = (event) => {
-      if (event.data.id !== requestIdRef.current) return; // superseded by a newer request
-      setMerged(event.data.result ? datasetFromWorkerPayload(event.data.result) : null);
-      setMergePending(false);
-    };
-    worker.onerror = (err) => {
-      // without this, a thrown computeMerge (e.g. from unexpected input) leaves
-      // mergePending stuck true forever, since no message would ever arrive
-      if (requestId !== requestIdRef.current) return;
-      console.error("合併資料時發生錯誤：", err.message);
-      setMergePending(false);
-    };
-    worker.postMessage({
-      id: requestId,
-      type: "merge",
-      payload: { baseFile, others, outputCols, joinConfig, joinType },
-    });
+
+    request("merge", { baseFile, others, outputCols, joinConfig, joinType })
+      .then((result) => {
+        if (requestId !== requestIdRef.current) return; // superseded by a newer request
+        setMerged(result ? datasetFromWorkerPayload(result) : null);
+        setMergePending(false);
+      })
+      .catch((err) => {
+        // without this, a thrown computeMerge (e.g. from unexpected input) leaves
+        // mergePending stuck true forever, since no response would ever arrive
+        if (requestId !== requestIdRef.current) return;
+        console.error("合併資料時發生錯誤：", err.message);
+        setMergePending(false);
+      });
     // eslint-disable-next-line
   }, [step, baseFile, others, outputCols, JSON.stringify(joinConfig), joinType]);
 

@@ -6,7 +6,9 @@ import { useCollections } from "./hooks/useCollections.js";
 import { useCollectionSidebar } from "./hooks/useCollectionSidebar.js";
 import { useColumnSelection } from "./hooks/useColumnSelection.js";
 import { useOutputColumns } from "./hooks/useOutputColumns.js";
+import { useSharedWorker } from "./hooks/useSharedWorker.js";
 import { useMerge } from "./hooks/useMerge.js";
+import { useDataQuality } from "./hooks/useDataQuality.js";
 import StepTab from "./components/StepTab.jsx";
 import CollectionsSidebar from "./components/CollectionsSidebar.jsx";
 import StepFiles from "./components/StepFiles.jsx";
@@ -29,7 +31,9 @@ export default function CsvMergeWorkbench({ storage }) {
   const { collections, collectionsLoaded, createCollection, deleteCollection, updateCollection } = useCollections(storage);
   const columnSelection = useColumnSelection(files, collections);
   const outputColumns = useOutputColumns(files, columnSelection.selections);
-  const { merged, mergePending, exporting, exportCsv } = useMerge(step, baseFile, others, outputColumns.outputCols, joinConfig, joinType);
+  const requestWorker = useSharedWorker();
+  const { merged, mergePending, exporting, exportCsv } = useMerge(requestWorker, step, baseFile, others, outputColumns.outputCols, joinConfig, joinType);
+  const { qualityData, qualityPending } = useDataQuality(requestWorker, step, merged);
   const sidebar = useCollectionSidebar({ files, collections, createCollection, updateCollection });
 
   const canStep2 = files.length > 0 && outputColumns.outputCols.length > 0;
@@ -144,7 +148,7 @@ export default function CsvMergeWorkbench({ storage }) {
             <StepPreview merged={merged} mergePending={mergePending} exporting={exporting} exportCsv={exportCsv} goToStep5={() => setStep(5)} />
           )}
           {mode === "merge" && step === 5 && (
-            <StepDataQuality merged={merged} baseFile={baseFile} files={files} exportCsv={exportCsv} exporting={exporting} />
+            <StepDataQuality merged={merged} baseFile={baseFile} files={files} exportCsv={exportCsv} exporting={exporting} qualityData={qualityData} qualityPending={qualityPending} />
           )}
         </div>
 

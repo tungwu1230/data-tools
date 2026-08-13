@@ -1,26 +1,23 @@
 import { useState, useMemo } from "react";
 import { Download, BarChart2, CheckCircle2, FileText, Search, Activity, Copy, Check } from "lucide-react";
-import { analyzeDataQuality } from "../utils/quality.js";
 
-export default function StepDataQuality({ merged, baseFile, files = [], exportCsv, exporting }) {
+export default function StepDataQuality({ merged, baseFile, files = [], exportCsv, exporting, qualityData, qualityPending }) {
   const [searchFilter, setSearchFilter] = useState("");
   const [copied, setCopied] = useState(false);
 
-  const qualityData = useMemo(() => {
-    if (!merged || !merged.rows) return null;
-    return analyzeDataQuality(merged);
-  }, [merged]);
-
-  if (!merged || !qualityData) return <div className="empty">尚未計算合併結果。</div>;
-
+  // hooks must run unconditionally every render — the pending/empty checks
+  // below happen after, not before, this useMemo
   const filteredColStats = useMemo(() => {
-    if (!qualityData.colStats) return [];
+    if (!qualityData?.colStats) return [];
     if (!searchFilter.trim()) return qualityData.colStats;
     const term = searchFilter.trim().toLowerCase();
     return qualityData.colStats.filter(
       (cs) => cs.outputName.toLowerCase().includes(term) || cs.fileName.toLowerCase().includes(term)
     );
   }, [qualityData, searchFilter]);
+
+  if (qualityPending) return <div className="empty">正在計算資料品質報告，請稍候…</div>;
+  if (!merged || !qualityData) return <div className="empty">尚未計算合併結果。</div>;
 
   const copyToClipboard = () => {
     if (!merged || merged.rows.length === 0) return;
