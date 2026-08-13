@@ -30,19 +30,24 @@ export function analyzeDataQuality(dataset) {
 
     dataset.rows.forEach((r) => {
       const rawVal = r[colKey];
-      if (rawVal !== undefined && rawVal !== null && String(rawVal).trim() !== "") {
-        filledCount++;
-        const valStr = String(rawVal).trim();
-        valMap.set(valStr, (valMap.get(valStr) || 0) + 1);
+      if (rawVal === undefined || rawVal === null) return;
+      const valStr = String(rawVal).trim();
+      if (valStr === "") return;
 
-        // Type checking
-        if (!isNaN(Number(valStr))) {
-          typeCounts.number++;
-          const num = Number(valStr);
-          numSum += num;
-          if (num < numMin) numMin = num;
-          if (num > numMax) numMax = num;
-        } else if (valStr.toLowerCase() === "true" || valStr.toLowerCase() === "false") {
+      filledCount++;
+      valMap.set(valStr, (valMap.get(valStr) || 0) + 1);
+
+      // Type checking — each value is classified by exactly one branch;
+      // cheaper checks run first and short-circuit the pricier ones (regex + Date.parse).
+      const num = Number(valStr);
+      if (!isNaN(num)) {
+        typeCounts.number++;
+        numSum += num;
+        if (num < numMin) numMin = num;
+        if (num > numMax) numMax = num;
+      } else {
+        const lower = valStr.toLowerCase();
+        if (lower === "true" || lower === "false") {
           typeCounts.boolean++;
         } else if (/^\d{4}[-/.]\d{1,2}[-/.]\d{1,2}/.test(valStr) && !isNaN(Date.parse(valStr))) {
           typeCounts.date++;
