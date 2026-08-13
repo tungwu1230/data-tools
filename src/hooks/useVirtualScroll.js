@@ -15,29 +15,35 @@ import { useCallback, useLayoutEffect, useRef, useState } from "react";
 // below is a second line of defense for cases `resetKey` doesn't cover
 // (e.g. the same list simply getting shorter).
 export function useVirtualScroll({ count, itemSize, overscan = 6, axis = "y", resetKey }) {
-  const containerRef = useRef(null);
+  // A plain useRef's `.current` mutation doesn't retrigger effects, so if the
+  // container isn't mounted yet on the first commit (e.g. an early-return
+  // empty state before this hook's consumer has data), the measurement below
+  // would never run again once the real element shows up. A callback ref
+  // backed by state fixes that: React calls it — and updates `containerEl` —
+  // every time the underlying DOM node is attached, including on a later
+  // render than the hook's own mount.
+  const [containerEl, setContainerEl] = useState(null);
+  const containerRef = useCallback((node) => setContainerEl(node), []);
   const [scrollOffset, setScrollOffset] = useState(0);
   const [viewportSize, setViewportSize] = useState(0);
   const prevResetKeyRef = useRef(resetKey);
 
   useLayoutEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-    const measure = () => setViewportSize(axis === "x" ? el.clientWidth : el.clientHeight);
+    if (!containerEl) return;
+    const measure = () => setViewportSize(axis === "x" ? containerEl.clientWidth : containerEl.clientHeight);
     measure();
     const ro = new ResizeObserver(measure);
-    ro.observe(el);
+    ro.observe(containerEl);
     return () => ro.disconnect();
-  }, [axis]);
+  }, [containerEl, axis]);
 
   useLayoutEffect(() => {
     if (prevResetKeyRef.current === resetKey) return;
     prevResetKeyRef.current = resetKey;
     setScrollOffset(0);
-    const el = containerRef.current;
-    if (!el) return;
-    if (axis === "x") el.scrollLeft = 0; else el.scrollTop = 0;
-  }, [resetKey, axis]);
+    if (!containerEl) return;
+    if (axis === "x") containerEl.scrollLeft = 0; else containerEl.scrollTop = 0;
+  }, [resetKey, axis, containerEl]);
 
   const onScroll = useCallback((e) => {
     setScrollOffset(axis === "x" ? e.currentTarget.scrollLeft : e.currentTarget.scrollTop);
