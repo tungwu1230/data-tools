@@ -4,11 +4,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Commands
 
-- `npm run dev` — start Vite dev server
-- `npm run build` — production build (outputs to `dist/`)
-- `npm run preview` — preview the production build locally
-- `npm test` — run the Vitest test suite once
-- `npm run test:watch` — run Vitest in watch mode
+This project uses pnpm (pinned via `packageManager` in `package.json`) — don't use npm or yarn, the lockfile is `pnpm-lock.yaml` only.
+
+- `pnpm run dev` — start Vite dev server
+- `pnpm run build` — production build (outputs to `dist/`)
+- `pnpm run preview` — preview the production build locally
+- `pnpm test` — run the Vitest test suite once
+- `pnpm run test:watch` — run Vitest in watch mode
 
 There is no linter or type checker configured in this project. The test suite (Vitest) covers the pure modules under `src/utils/` (`dataset.js`, `csv.js`, `outputColumns.js`); component/hook behavior is not tested.
 
