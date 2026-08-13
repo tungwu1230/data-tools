@@ -1,6 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, memo } from "react";
 import ConfirmModal from "./ConfirmModal.jsx";
 import UploadModal from "./UploadModal.jsx";
+import { useVirtualScroll } from "../hooks/useVirtualScroll.js";
 import {
   Upload,
   Trash2,
@@ -20,7 +21,15 @@ function getColLetter(index) {
   return letter;
 }
 
-export default function StepFiles(props) {
+// Beyond this many columns, auto-sized columns give way to fixed-width,
+// horizontally-windowed rendering (only columns near the scroll position are
+// mounted). Below it, the sheet renders exactly as it always has — this is
+// what keeps small files' appearance/behavior unchanged.
+const COLUMN_VIRTUALIZE_THRESHOLD = 60;
+const COL_WIDTH = 160;
+const COLUMN_OVERSCAN = 4;
+
+function StepFiles(props) {
   const {
     files, loadingFiles, fileInputRef, handleUpload, removeFile,
     selections, toggleColumn,
@@ -41,6 +50,19 @@ export default function StepFiles(props) {
   }, [files, baseFileId, activeFileId, setActiveFileId]);
 
   const activeFile = files.find((f) => f.id === activeFileId) || files[0];
+  const headers = activeFile ? activeFile.headers : [];
+  const shouldVirtualizeCols = headers.length > COLUMN_VIRTUALIZE_THRESHOLD;
+
+  // Hook must run unconditionally (before the empty-state early return below)
+  // to satisfy the Rules of Hooks — count is 0 whenever there's nothing to
+  // virtualize yet, which the hook already handles.
+  const { containerRef: sheetWrapRef, onScroll: onSheetScroll, start: colStart, end: colEnd } = useVirtualScroll({
+    count: shouldVirtualizeCols ? headers.length : 0,
+    itemSize: COL_WIDTH,
+    overscan: COLUMN_OVERSCAN,
+    axis: "x",
+    resetKey: activeFile ? activeFile.id : null,
+  });
 
   const handleConfirmRemove = () => {
     if (fileToDelete) {
@@ -98,6 +120,44 @@ export default function StepFiles(props) {
   }
 
   const activeSel = activeFile ? (selections[activeFile.id] || new Set()) : new Set();
+
+  const renderHeaderCell = (h, index) => {
+    const isChecked = activeSel.has(h);
+    return (
+      <th
+        key={h}
+        className={`sheet-col-header ${isChecked ? "is-selected" : ""}`}
+        style={shouldVirtualizeCols ? { width: COL_WIDTH, minWidth: COL_WIDTH, maxWidth: COL_WIDTH } : undefined}
+        onClick={() => toggleColumn(activeFile.id, h)}
+        title={`點擊${isChecked ? "取消" : "勾選"}欄位「${h}」`}
+      >
+        <span className="sheet-col-letter">{getColLetter(index)}</span>
+        <div className="sheet-col-header-content">
+          <span className="sheet-col-name">{h}</span>
+          {isChecked && (
+            <span className="sheet-col-badge">
+              <Check size={10} />
+            </span>
+          )}
+        </div>
+      </th>
+    );
+  };
+
+  const renderBodyCell = (h, row) => {
+    const isChecked = activeSel.has(h);
+    return (
+      <td
+        key={h}
+        className={`sheet-cell ${isChecked ? "is-selected" : ""}`}
+        style={shouldVirtualizeCols ? { width: COL_WIDTH, minWidth: COL_WIDTH, maxWidth: COL_WIDTH } : undefined}
+      >
+        {String(row[h] ?? "")}
+      </td>
+    );
+  };
+
+  const visibleHeaderList = shouldVirtualizeCols ? headers.slice(colStart, colEnd) : headers;
 
   return (
     <div className="step-files-container">
@@ -203,46 +263,34 @@ export default function StepFiles(props) {
             </div>
 
             {/* Sheet Table View */}
-            <div className="sheet-table-wrap">
-              <table className="sheet-table">
+            <div className="sheet-table-wrap" ref={sheetWrapRef} onScroll={shouldVirtualizeCols ? onSheetScroll : undefined}>
+              <table
+                className={`sheet-table ${shouldVirtualizeCols ? "is-virtual" : ""}`}
+                style={shouldVirtualizeCols ? { tableLayout: "fixed", width: headers.length * COL_WIDTH + 44 } : undefined}
+              >
                 <thead>
                   <tr>
                     <th className="sheet-row-num-header">#</th>
-                    {activeFile.headers.map((h, index) => {
-                      const isChecked = activeSel.has(h);
-                      return (
-                        <th
-                          key={h}
-                          className={`sheet-col-header ${isChecked ? "is-selected" : ""}`}
-                          onClick={() => toggleColumn(activeFile.id, h)}
-                          title={`點擊${isChecked ? "取消" : "勾選"}欄位「${h}」`}
-                        >
-                          <span className="sheet-col-letter">{getColLetter(index)}</span>
-                          <div className="sheet-col-header-content">
-                            <span className="sheet-col-name">{h}</span>
-                            {isChecked && (
-                              <span className="sheet-col-badge">
-                                <Check size={10} />
-                              </span>
-                            )}
-                          </div>
-                        </th>
-                      );
-                    })}
+                    {shouldVirtualizeCols && colStart > 0 && (
+                      <th className="sheet-col-spacer" style={{ width: colStart * COL_WIDTH }} aria-hidden="true" />
+                    )}
+                    {visibleHeaderList.map((h, i) => renderHeaderCell(h, shouldVirtualizeCols ? colStart + i : i))}
+                    {shouldVirtualizeCols && colEnd < headers.length && (
+                      <th className="sheet-col-spacer" style={{ width: (headers.length - colEnd) * COL_WIDTH }} aria-hidden="true" />
+                    )}
                   </tr>
                 </thead>
                 <tbody>
                   {activeFile.rows.slice(0, 100).map((row, rIdx) => (
                     <tr key={rIdx} className="sheet-row">
                       <td className="sheet-row-num">{rIdx + 1}</td>
-                      {activeFile.headers.map((h) => {
-                        const isChecked = activeSel.has(h);
-                        return (
-                          <td key={h} className={`sheet-cell ${isChecked ? "is-selected" : ""}`}>
-                            {String(row[h] ?? "")}
-                          </td>
-                        );
-                      })}
+                      {shouldVirtualizeCols && colStart > 0 && (
+                        <td className="sheet-col-spacer" style={{ width: colStart * COL_WIDTH }} aria-hidden="true" />
+                      )}
+                      {visibleHeaderList.map((h) => renderBodyCell(h, row))}
+                      {shouldVirtualizeCols && colEnd < headers.length && (
+                        <td className="sheet-col-spacer" style={{ width: (headers.length - colEnd) * COL_WIDTH }} aria-hidden="true" />
+                      )}
                     </tr>
                   ))}
                 </tbody>
@@ -254,3 +302,5 @@ export default function StepFiles(props) {
     </div>
   );
 }
+
+export default memo(StepFiles);

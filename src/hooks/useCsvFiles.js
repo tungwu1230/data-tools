@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useMemo } from "react";
+import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { parseCsvFile } from "../utils/csv.js";
 import { nextId } from "../utils/ids.js";
 
@@ -9,7 +9,7 @@ export function useCsvFiles() {
   const [baseFileId, setBaseFileId] = useState(null);
   const fileInputRef = useRef(null);
 
-  const handleUpload = async (e) => {
+  const handleUpload = useCallback(async (e) => {
     const list = Array.from(e.target.files || []);
     if (list.length === 0) return;
     setLoadingFiles(true);
@@ -31,12 +31,12 @@ export function useCsvFiles() {
       setLoadingFiles(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
     }
-  };
+  }, [baseFileId]);
 
-  const removeFile = (fileId) => {
+  const removeFile = useCallback((fileId) => {
     setFiles((prev) => prev.filter((f) => f.id !== fileId));
     setBaseFileId((prev) => (prev === fileId ? null : prev));
-  };
+  }, []);
 
   useEffect(() => {
     if (!baseFileId && files.length > 0) setBaseFileId(files[0].id);

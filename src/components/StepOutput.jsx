@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useCallback, memo } from "react";
 import {
   DndContext,
+  DragOverlay,
   closestCenter,
   KeyboardSensor,
   PointerSensor,
@@ -15,8 +16,14 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { GripVertical, RotateCcw, Filter, Bookmark, Search, X } from "lucide-react";
+import { useVirtualScroll } from "../hooks/useVirtualScroll.js";
 
-function SortableRow({ oc, isSelected, onToggleSelect, onRename, onResetName }) {
+// row slot height for the virtualized table body below — keep in sync with
+// `.out-table td` padding (7px top/bottom + ~28px tallest content + border)
+const ROW_HEIGHT = 43;
+const ROW_OVERSCAN = 8;
+
+const SortableRow = memo(function SortableRow({ oc, isSelected, onToggleSelect, onRename, onResetName }) {
   const {
     attributes,
     listeners,
@@ -70,9 +77,9 @@ function SortableRow({ oc, isSelected, onToggleSelect, onRename, onResetName }) 
       </td>
     </tr>
   );
-}
+});
 
-export default function StepOutput(props) {
+function StepOutput(props) {
   const {
     files, collections,
     outputCols, selectedOutIds, toggleOutSelect, selectAllOut, clearOutSel,
@@ -84,6 +91,7 @@ export default function StepOutput(props) {
   const [fileFilter, setFileFilter] = useState("all");
   const [collectionFilter, setCollectionFilter] = useState("all");
   const [searchText, setSearchText] = useState("");
+  const [activeId, setActiveId] = useState(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -131,12 +139,36 @@ export default function StepOutput(props) {
     setSearchText("");
   };
 
-  const handleDragEnd = (event) => {
+  const handleDragStart = useCallback((event) => setActiveId(event.active.id), []);
+
+  const handleDragEnd = useCallback((event) => {
+    setActiveId(null);
     const { active, over } = event;
     if (over && active.id !== over.id) {
       reorderOutputCols(active.id, over.id);
     }
-  };
+  }, [reorderOutputCols]);
+
+  const handleDragCancel = useCallback(() => setActiveId(null), []);
+
+  const activeCol = activeId ? outputCols.find((oc) => oc.id === activeId) : null;
+
+  // Only mounted/visible rows get a useSortable instance — SortableContext
+  // still gets the full id list so index/order math stays correct, but
+  // `<tbody>` only renders the windowed slice plus two spacer rows sized to
+  // account for the unmounted rows above/below. DndContext's built-in
+  // autoScroll (scrolls the nearest scrollable ancestor, `.out-table-wrap`)
+  // shifts this window as the user drags near the top/bottom edge; the
+  // DragOverlay below keeps the dragged row visible even if its own
+  // `SortableRow` unmounts mid-drag as the window moves.
+  const { containerRef: rowsRef, onScroll: onRowsScroll, start: rowStart, end: rowEnd, offset: topSpacerHeight } = useVirtualScroll({
+    count: displayCols.length,
+    itemSize: ROW_HEIGHT,
+    overscan: ROW_OVERSCAN,
+    resetKey: `${fileFilter}|${collectionFilter}|${searchText}`,
+  });
+  const visibleCols = displayCols.slice(rowStart, rowEnd);
+  const bottomSpacerHeight = Math.max(0, displayCols.length - rowEnd) * ROW_HEIGHT;
 
   return (
     <div>
@@ -219,40 +251,78 @@ export default function StepOutput(props) {
         </div>
       </div>
 
-      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-        <table className="out-table">
-          <thead>
-            <tr>
-              <th style={{ width: 32, textAlign: "center" }}>
-                <input
-                  type="checkbox"
-                  checked={allDisplayedSelected}
-                  onChange={handleHeaderCheckboxChange}
-                  disabled={displayCols.length === 0}
-                />
-              </th>
-              <th style={{ width: 50, textAlign: "center" }}>順序</th>
-              <th style={{ width: "24%" }}>來源檔案</th>
-              <th style={{ width: "24%" }}>原始欄位</th>
-              <th>輸出欄位名稱</th>
-              <th style={{ width: 70, textAlign: "center" }}>操作</th>
-            </tr>
-          </thead>
-          <SortableContext items={displayCols.map((oc) => oc.id)} strategy={verticalListSortingStrategy}>
-            <tbody>
-              {displayCols.map((oc) => (
-                <SortableRow
-                  key={oc.id}
-                  oc={oc}
-                  isSelected={selectedOutIds.has(oc.id)}
-                  onToggleSelect={toggleOutSelect}
-                  onRename={renameOutputCol}
-                  onResetName={resetOutputName}
-                />
-              ))}
-            </tbody>
-          </SortableContext>
-        </table>
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
+        onDragCancel={handleDragCancel}
+      >
+        <div className="out-table-wrap" ref={rowsRef} onScroll={onRowsScroll}>
+          <table className="out-table">
+            <thead>
+              <tr>
+                <th style={{ width: 32, textAlign: "center" }}>
+                  <input
+                    type="checkbox"
+                    checked={allDisplayedSelected}
+                    onChange={handleHeaderCheckboxChange}
+                    disabled={displayCols.length === 0}
+                  />
+                </th>
+                <th style={{ width: 50, textAlign: "center" }}>順序</th>
+                <th style={{ width: "24%" }}>來源檔案</th>
+                <th style={{ width: "24%" }}>原始欄位</th>
+                <th>輸出欄位名稱</th>
+                <th style={{ width: 70, textAlign: "center" }}>操作</th>
+              </tr>
+            </thead>
+            <SortableContext items={displayCols.map((oc) => oc.id)} strategy={verticalListSortingStrategy}>
+              <tbody>
+                {topSpacerHeight > 0 && (
+                  <tr aria-hidden="true" style={{ height: topSpacerHeight }}>
+                    <td colSpan={6} style={{ padding: 0, border: "none" }} />
+                  </tr>
+                )}
+                {visibleCols.map((oc) => (
+                  <SortableRow
+                    key={oc.id}
+                    oc={oc}
+                    isSelected={selectedOutIds.has(oc.id)}
+                    onToggleSelect={toggleOutSelect}
+                    onRename={renameOutputCol}
+                    onResetName={resetOutputName}
+                  />
+                ))}
+                {bottomSpacerHeight > 0 && (
+                  <tr aria-hidden="true" style={{ height: bottomSpacerHeight }}>
+                    <td colSpan={6} style={{ padding: 0, border: "none" }} />
+                  </tr>
+                )}
+              </tbody>
+            </SortableContext>
+          </table>
+        </div>
+        <DragOverlay>
+          {activeCol ? (
+            <table className="out-table out-drag-overlay-table">
+              <tbody>
+                <tr>
+                  <td style={{ width: 32, textAlign: "center" }}>
+                    <input type="checkbox" checked={selectedOutIds.has(activeCol.id)} readOnly />
+                  </td>
+                  <td style={{ width: 50, textAlign: "center" }}>
+                    <GripVertical size={14} />
+                  </td>
+                  <td className="out-src-file" style={{ width: "24%" }}>{activeCol.fileName}</td>
+                  <td className="out-src-col" style={{ width: "24%" }}>{activeCol.column}</td>
+                  <td>{activeCol.outputName}</td>
+                  <td style={{ width: 70 }} />
+                </tr>
+              </tbody>
+            </table>
+          ) : null}
+        </DragOverlay>
       </DndContext>
       {outputCols.length === 0 && <div className="empty">還沒有選取任何欄位，回上一步挑選要輸出的欄位。</div>}
       {outputCols.length > 0 && displayCols.length === 0 && (
@@ -261,3 +331,5 @@ export default function StepOutput(props) {
     </div>
   );
 }
+
+export default memo(StepOutput);

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { parseCollectionSyntax } from "../utils/columns.js";
 import { pruneByKey } from "../utils/state.js";
 
@@ -30,15 +30,15 @@ export function useColumnSelection(files, collections) {
     });
   }, [collections]);
 
-  const toggleColumn = (fileId, col) => {
+  const toggleColumn = useCallback((fileId, col) => {
     setSelections((prev) => {
       const set = new Set(prev[fileId] || []);
       if (set.has(col)) set.delete(col); else set.add(col);
       return { ...prev, [fileId]: set };
     });
-  };
+  }, []);
 
-  const visibleHeaders = (file) => {
+  const visibleHeaders = useCallback((file) => {
     const fm = filterMode[file.id] || { mode: "text", text: "" };
     if (fm.mode === "collection") {
       const c = collections.find((c) => c.id === fm.collectionId);
@@ -48,10 +48,10 @@ export function useColumnSelection(files, collections) {
     const t = (fm.text || "").trim().toLowerCase();
     if (!t) return file.headers;
     return file.headers.filter((h) => h.toLowerCase().startsWith(t));
-  };
+  }, [filterMode, collections]);
 
   // handles both plain prefix search and $collection_name$ syntax
-  const updateFilter = (fileId, rawValue) => {
+  const updateFilter = useCallback((fileId, rawValue) => {
     const parsedName = parseCollectionSyntax(rawValue);
     if (parsedName) {
       const col = collections.find((c) => c.name.toLowerCase() === parsedName.toLowerCase());
@@ -70,26 +70,26 @@ export function useColumnSelection(files, collections) {
       }
     }
     setFilterMode((prev) => ({ ...prev, [fileId]: { mode: "text", text: rawValue, collectionId: null } }));
-  };
+  }, [collections, files]);
 
-  const clearFilter = (fileId) => setFilterMode((prev) => ({ ...prev, [fileId]: { mode: "text", text: "", collectionId: null } }));
+  const clearFilter = useCallback((fileId) => setFilterMode((prev) => ({ ...prev, [fileId]: { mode: "text", text: "", collectionId: null } })), []);
 
-  const selectAllVisible = (file) => {
+  const selectAllVisible = useCallback((file) => {
     const vis = visibleHeaders(file);
     setSelections((prev) => {
       const set = new Set(prev[file.id] || []);
       vis.forEach((h) => set.add(h));
       return { ...prev, [file.id]: set };
     });
-  };
-  const clearVisible = (file) => {
+  }, [visibleHeaders]);
+  const clearVisible = useCallback((file) => {
     const vis = new Set(visibleHeaders(file));
     setSelections((prev) => {
       const set = new Set(prev[file.id] || []);
       vis.forEach((h) => set.delete(h));
       return { ...prev, [file.id]: set };
     });
-  };
+  }, [visibleHeaders]);
 
   return {
     selections, filterMode, toggleColumn, visibleHeaders,

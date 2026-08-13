@@ -210,6 +210,12 @@ html, body {
 .col-item .match { color: var(--accent-strong); font-weight: 700; }
 .no-match { color: var(--text-faint); font-size: 12px; padding: 10px 4px; }
 
+/* Windowed (virtualized) checkbox list in ColumnSelectionSidebar — only the
+   rows within/near the scroll viewport are mounted, positioned absolutely
+   inside a spacer sized to the full list, so the scrollbar stays accurate. */
+.col-list-viewport { overflow-y: auto; padding: 2px; }
+.col-item.virtual-row { height: 32px; box-sizing: border-box; margin-bottom: 4px; }
+
 .merge-panel {
   border: 1px solid var(--border);
   border-radius: 14px;
@@ -626,11 +632,20 @@ select:focus, .merge-select:focus {
   outline: none; border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-dim);
 }
 
-.out-table { width: 100%; border-collapse: collapse; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+/* Windowed (virtualized) output-column table — .out-table-wrap owns the
+   scroll + outer border/radius, .out-table itself lays flush inside it so
+   only the row window between the two spacer rows ever mounts a real row. */
+.out-table-wrap { max-height: calc(100vh - 400px); overflow-y: auto; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; }
+.out-table { width: 100%; border-collapse: collapse; background: var(--surface); }
+.out-table thead th { position: sticky; top: 0; z-index: 2; }
 .out-table th { text-align: left; font-size: 10.5px; text-transform: uppercase; letter-spacing: .05em; color: var(--text-faint); font-weight: 700; padding: 8px 10px; border-bottom: 1px solid var(--border); background: var(--surface-alt); }
 .out-table td { padding: 7px 10px; border-bottom: 1px solid var(--border-soft); vertical-align: middle; }
 .out-table tr:last-child td { border-bottom: none; }
 .out-table tr:hover td { background: var(--surface-alt); }
+.out-drag-overlay-table {
+  border: 1px solid var(--accent); border-radius: 12px; overflow: hidden;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.18); cursor: grabbing;
+}
 .out-src-file { font-size: 11.5px; color: var(--text-dim); }
 .out-src-col { font-family: var(--mono); font-size: 11.5px; color: var(--text); font-weight: 600; }
 .out-name-input {
@@ -864,6 +879,22 @@ select:focus, .merge-select:focus {
 
 .sheet-row:hover .sheet-cell.is-selected {
   background: rgba(28, 93, 143, 0.11);
+}
+
+/* Windowed (virtualized) sheet columns — only engaged past
+   COLUMN_VIRTUALIZE_THRESHOLD in StepFiles.jsx. Columns switch from
+   auto-width to a fixed COL_WIDTH so a scroll-offset range can be computed;
+   two spacer cells (sized to the skipped column ranges) stand in for the
+   columns that aren't mounted, keeping the scrollbar's proportions accurate. */
+.sheet-table.is-virtual .sheet-col-name,
+.sheet-table.is-virtual .sheet-cell {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sheet-col-spacer {
+  padding: 0;
+  border: none;
+  background: transparent;
 }
 
 .right-panel-head {

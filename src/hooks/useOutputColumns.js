@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { arrayMove } from "@dnd-kit/sortable";
 import { buildOutputCols } from "../utils/outputColumns.js";
 
@@ -23,7 +23,7 @@ export function useOutputColumns(files, selections) {
   // Hydrate orderPrefs to the current effective order, then move. After the
   // first reorder, orderPrefs holds the full list, so new selections append and
   // deselections are simply filtered out by buildOutputCols.
-  const reorderOutputCols = (activeId, overId) => {
+  const reorderOutputCols = useCallback((activeId, overId) => {
     setOrderPrefs((prev) => {
       const currentOrder = outputCols.map((oc) => oc.id);
       const oldIndex = currentOrder.indexOf(activeId);
@@ -31,47 +31,47 @@ export function useOutputColumns(files, selections) {
       if (oldIndex === -1 || newIndex === -1 || oldIndex === newIndex) return prev;
       return arrayMove(currentOrder, oldIndex, newIndex);
     });
-  };
+  }, [outputCols]);
 
-  const renameOutputCol = (id, name) =>
-    setRenameOverlay((prev) => ({ ...prev, [id]: name }));
+  const renameOutputCol = useCallback((id, name) =>
+    setRenameOverlay((prev) => ({ ...prev, [id]: name })), []);
 
-  const resetOutputName = (id) =>
+  const resetOutputName = useCallback((id) =>
     setRenameOverlay((prev) => {
       if (!Object.prototype.hasOwnProperty.call(prev, id)) return prev;
       const next = { ...prev };
       delete next[id];
       return next;
-    });
+    }), []);
 
-  const resetSelectedOutputNames = () => {
+  const resetSelectedOutputNames = useCallback(() => {
     if (selectedOutIds.size === 0) { alert("請先勾選要還原名稱的欄位。"); return; }
     setRenameOverlay((prev) => {
       const next = { ...prev };
       selectedOutIds.forEach((id) => delete next[id]);
       return next;
     });
-  };
+  }, [selectedOutIds]);
 
-  const toggleOutSelect = (id) => setSelectedOutIds((prev) => {
+  const toggleOutSelect = useCallback((id) => setSelectedOutIds((prev) => {
     const set = new Set(prev);
     if (set.has(id)) set.delete(id); else set.add(id);
     return set;
-  });
-  const selectOutIds = (ids) => setSelectedOutIds((prev) => {
+  }), []);
+  const selectOutIds = useCallback((ids) => setSelectedOutIds((prev) => {
     const next = new Set(prev);
     ids.forEach((id) => next.add(id));
     return next;
-  });
-  const deselectOutIds = (ids) => setSelectedOutIds((prev) => {
+  }), []);
+  const deselectOutIds = useCallback((ids) => setSelectedOutIds((prev) => {
     const next = new Set(prev);
     ids.forEach((id) => next.delete(id));
     return next;
-  });
-  const selectAllOut = () => setSelectedOutIds(new Set(outputCols.map((o) => o.id)));
-  const clearOutSel = () => setSelectedOutIds(new Set());
+  }), []);
+  const selectAllOut = useCallback(() => setSelectedOutIds(new Set(outputCols.map((o) => o.id))), [outputCols]);
+  const clearOutSel = useCallback(() => setSelectedOutIds(new Set()), []);
 
-  const applyPrefixSuffix = () => {
+  const applyPrefixSuffix = useCallback(() => {
     if (selectedOutIds.size === 0) { alert("請先勾選要套用前後綴的欄位。"); return; }
     setRenameOverlay((prev) => {
       const next = { ...prev };
@@ -82,7 +82,7 @@ export function useOutputColumns(files, selections) {
       });
       return next;
     });
-  };
+  }, [selectedOutIds, outputCols, prefixVal, suffixVal]);
 
   return {
     outputCols, selectedOutIds, prefixVal, setPrefixVal, suffixVal, setSuffixVal,

@@ -22,8 +22,6 @@ import StepDataQuality from "./components/StepDataQuality.jsx";
 export default function CsvMergeWorkbench({ storage }) {
   const [mode, setMode] = useState("merge"); // "merge" | "explore" — explore mode works right after upload, independent of wizard step-gating
   const [step, setStep] = useState(1);
-  const [collapsed, setCollapsed] = useState({});
-  const [previewOpen, setPreviewOpen] = useState({});
   const [activeFileId, setActiveFileId] = useState(null);
 
   const { files, loadingFiles, fileInputRef, handleUpload, removeFile, baseFileId, setBaseFileId, baseFile, others } = useCsvFiles();
@@ -117,12 +115,8 @@ export default function CsvMergeWorkbench({ storage }) {
           {mode === "merge" && step === 1 && (
             <StepFiles
               files={files} loadingFiles={loadingFiles} fileInputRef={fileInputRef} handleUpload={handleUpload} removeFile={removeFile}
-              collapsed={collapsed} setCollapsed={setCollapsed} previewOpen={previewOpen} setPreviewOpen={setPreviewOpen}
-              selections={columnSelection.selections} toggleColumn={columnSelection.toggleColumn} visibleHeaders={columnSelection.visibleHeaders}
-              filterMode={columnSelection.filterMode} updateFilter={columnSelection.updateFilter} clearFilter={columnSelection.clearFilter}
-              selectAllVisible={columnSelection.selectAllVisible} clearVisible={columnSelection.clearVisible}
-              collections={collections} openCreateFromFile={sidebar.openCreateFromFile}
-              baseFileId={baseFileId} setBaseFileId={setBaseFileId} others={others} joinConfig={joinConfig} setJoinConfig={setJoinConfig}
+              selections={columnSelection.selections} toggleColumn={columnSelection.toggleColumn}
+              baseFileId={baseFileId} setBaseFileId={setBaseFileId}
               activeFileId={activeFileId} setActiveFileId={setActiveFileId}
             />
           )}

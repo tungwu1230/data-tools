@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 
 // local workflow state for the "collections" sidebar (list vs. create/edit form)
 export function useCollectionSidebar({ files, collections, createCollection, updateCollection }) {
@@ -11,7 +11,7 @@ export function useCollectionSidebar({ files, collections, createCollection, upd
   const [fromDataFilterText, setFromDataFilterText] = useState("");
   const [editingId, setEditingId] = useState(null);
 
-  const openCreateFromFile = (file, currentSelection) => {
+  const openCreateFromFile = useCallback((file, currentSelection) => {
     setSidebarMode("create");
     setCreateMode("fromData");
     setEditingId(null);
@@ -19,7 +19,7 @@ export function useCollectionSidebar({ files, collections, createCollection, upd
     setFromDataChecked(new Set(currentSelection || []));
     setFromDataFilterText("");
     setCreateName("");
-  };
+  }, []);
 
   const openCreateBlank = (mode) => {
     setSidebarMode("create");

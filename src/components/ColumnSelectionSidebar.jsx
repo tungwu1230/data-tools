@@ -1,5 +1,7 @@
+import { memo } from "react";
 import { highlightMatch } from "../utils/highlightMatch.jsx";
 import { useResizableSidebar } from "../hooks/useResizableSidebar.js";
+import { useVirtualScroll } from "../hooks/useVirtualScroll.js";
 import {
   CheckSquare,
   Square,
@@ -8,7 +10,12 @@ import {
   FileSpreadsheet
 } from "lucide-react";
 
-export default function ColumnSelectionSidebar(props) {
+// slot height (item + gap) for the virtualized checkbox list below — keep in
+// sync with the `.col-item.virtual-row` CSS (32px item + 4px margin-bottom)
+const ROW_HEIGHT = 36;
+const OVERSCAN = 8;
+
+function ColumnSelectionSidebar(props) {
   const {
     files,
     activeFileId,
@@ -42,6 +49,14 @@ export default function ColumnSelectionSidebar(props) {
   const activeVis = activeFile ? visibleHeaders(activeFile) : [];
   const fm = activeFile ? (filterMode[activeFile.id] || { mode: "text", text: "" }) : { mode: "text", text: "" };
   const appliedCollection = fm.mode === "collection" ? collections.find((c) => c.id === fm.collectionId) : null;
+
+  const { containerRef: colListRef, onScroll: onColListScroll, start, end, totalSize, offset } = useVirtualScroll({
+    count: activeVis.length,
+    itemSize: ROW_HEIGHT,
+    overscan: OVERSCAN,
+    resetKey: `${activeFile ? activeFile.id : ""}|${fm.mode}|${fm.mode === "collection" ? fm.collectionId : fm.text}`,
+  });
+  const visibleRows = activeVis.slice(start, end);
 
   return (
     <div className="wb-sidebar-right" style={{ width: `${width}px`, position: "sticky" }}>
@@ -133,29 +148,42 @@ export default function ColumnSelectionSidebar(props) {
         <h4 style={{ fontSize: 10.5 }}>欄位清單 ({activeVis.length})</h4>
       </div>
 
-      <div className="col-list" style={{ gridTemplateColumns: "1fr", maxHeight: "calc(100vh - 320px)", flex: 1 }}>
+      <div
+        ref={colListRef}
+        onScroll={onColListScroll}
+        className="col-list-viewport"
+        style={{ maxHeight: "calc(100vh - 320px)", flex: 1 }}
+      >
         {activeVis.length === 0 && <div className="empty-mini">沒有符合條件的欄位。</div>}
-        {activeVis.map((h) => {
-          const isChecked = activeSel.has(h);
-          return (
-            <label className={`col-item ${isChecked ? "checked" : ""}`} key={h} style={{ justifyContent: "space-between" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, overflow: "hidden" }}>
-                <input
-                  type="checkbox"
-                  checked={isChecked}
-                  onChange={() => toggleColumn(activeFile.id, h)}
-                />
-                <span style={{ textOverflow: "ellipsis", overflow: "hidden", whiteSpace: "nowrap" }}>
-                  {highlightMatch(h, fm)}
-                </span>
-              </div>
-              <span className="col-item-badge">
-                {isChecked ? "已選" : "未選"}
-              </span>
-            </label>
-          );
-        })}
+        {activeVis.length > 0 && (
+          <div style={{ position: "relative", height: totalSize }}>
+            <div style={{ position: "absolute", top: offset, left: 0, right: 0 }}>
+              {visibleRows.map((h) => {
+                const isChecked = activeSel.has(h);
+                return (
+                  <label className={`col-item virtual-row ${isChecked ? "checked" : ""}`} key={h} style={{ justifyContent: "space-between" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, overflow: "hidden" }}>
+                      <input
+                        type="checkbox"
+                        checked={isChecked}
+                        onChange={() => toggleColumn(activeFile.id, h)}
+                      />
+                      <span style={{ textOverflow: "ellipsis", overflow: "hidden", whiteSpace: "nowrap" }}>
+                        {highlightMatch(h, fm)}
+                      </span>
+                    </div>
+                    <span className="col-item-badge">
+                      {isChecked ? "已選" : "未選"}
+                    </span>
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
 }
+
+export default memo(ColumnSelectionSidebar);
