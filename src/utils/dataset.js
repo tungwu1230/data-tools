@@ -52,3 +52,17 @@ export class Dataset {
     return [header, ...body];
   }
 }
+
+// Reconstructs a Dataset from the merge worker's plain-object response. Unlike
+// the constructor, this does not recompute duplicate-label warnings: the
+// worker already built a Dataset once (inside computeMerge) to produce its
+// `warnings`, so recomputing them here would double every duplicate-label
+// warning rather than reflecting it once.
+export function datasetFromWorkerPayload({ columns, rows, warnings = [] }) {
+  const ds = Object.create(Dataset.prototype);
+  ds.columns = columns;
+  ds.rows = rows;
+  ds.total = rows.length;
+  ds.warnings = warnings;
+  return ds;
+}

@@ -1,6 +1,7 @@
 import { Download, AlertTriangle, BarChart2 } from "lucide-react";
 
-export default function StepPreview({ merged, exporting, exportCsv, goToStep5 }) {
+export default function StepPreview({ merged, mergePending, exporting, exportCsv, goToStep5 }) {
+  if (mergePending) return <div className="empty">正在合併資料，請稍候…</div>;
   if (!merged) return <div className="empty">尚未計算合併結果。</div>;
   return (
     <div>

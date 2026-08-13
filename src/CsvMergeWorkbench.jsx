@@ -31,7 +31,7 @@ export default function CsvMergeWorkbench({ storage }) {
   const { collections, collectionsLoaded, createCollection, deleteCollection, updateCollection } = useCollections(storage);
   const columnSelection = useColumnSelection(files, collections);
   const outputColumns = useOutputColumns(files, columnSelection.selections);
-  const { merged, exporting, exportCsv } = useMerge(step, baseFile, others, outputColumns.outputCols, joinConfig, joinType);
+  const { merged, mergePending, exporting, exportCsv } = useMerge(step, baseFile, others, outputColumns.outputCols, joinConfig, joinType);
   const sidebar = useCollectionSidebar({ files, collections, createCollection, updateCollection });
 
   const canStep2 = files.length > 0 && outputColumns.outputCols.length > 0;
@@ -147,7 +147,7 @@ export default function CsvMergeWorkbench({ storage }) {
             />
           )}
           {mode === "merge" && step === 4 && (
-            <StepPreview merged={merged} exporting={exporting} exportCsv={exportCsv} goToStep5={() => setStep(5)} />
+            <StepPreview merged={merged} mergePending={mergePending} exporting={exporting} exportCsv={exportCsv} goToStep5={() => setStep(5)} />
           )}
           {mode === "merge" && step === 5 && (
             <StepDataQuality merged={merged} baseFile={baseFile} files={files} exportCsv={exportCsv} exporting={exporting} />
